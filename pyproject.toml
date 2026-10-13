@@ -37,6 +37,7 @@ dependencies = [
     "scipy",
     "fedfred",
     "matplotlib",
+    "ns-sdn==1.0.0a1",
 ]
 
 [project.optional-dependencies]
@@ -104,12 +105,19 @@ notebooks = [
     "notebook",
     "matplotlib",
 ]
+tools = [
+    "pre-commit",
+    "tox",
+    "tox-uv",
+    { include-group = "types" }
+]
 dev = [
     { include-group = "types" },
     { include-group = "test" },
     { include-group = "lint" },
     { include-group = "docs" },
     { include-group = "notebooks" },
+    { include-group = "tools" },
 ]
 
 # ── uv config ────────────────────────────────────────────────────────────────
@@ -159,6 +167,12 @@ ignore = ["D203", "D213"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"examples/plot_*.py" = ["D"]
+
+[tool.ruff.lint.isort]
+known-local-folder = ["_fred"]
 
 [tool.bandit]
 exclude_dirs = ["tests", "docs"]

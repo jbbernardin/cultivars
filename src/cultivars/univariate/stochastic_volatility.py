@@ -129,7 +129,7 @@ Example:
     reading the same latent path:
 
     >>> import numpy as np
-    >>> from cultivars._internals import _simulate_stochastic_volatility
+    >>> from cultivars.engine._internals._simulators import _simulate_stochastic_volatility
     >>> rng = np.random.default_rng(0)
     >>> y, h = _simulate_stochastic_volatility(
     ...     500, mu=-1.0, phi=0.95, sigma2=0.05, mean=0.0, rng=rng
@@ -153,30 +153,36 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from .._core import SummaryTable
-from .._internals import (
-    _ComparisonMixin,
+from ..bayes.priors import RandomWalkVolatilityPrior, VolatilityPrior
+from ..engine._internals._emitters import (
     _quasi_volatility_state_space,
-    _SeriesMixin,
-    _simulate_stochastic_volatility,
-    _StochasticVolatilityFit,
-    _StochasticVolatilityModel,
-    _StochasticVolatilityParameters,
-    _SummaryMixin,
-    _SVPosterior,
-    _TrendVolatilityModel,
-    _UCSVPosterior,
     _volatility_state_space,
 )
-from ..bayes.priors import RandomWalkVolatilityPrior, VolatilityPrior
+from ..engine._internals._fits import _StochasticVolatilityFit
+from ..engine._internals._mixins import (
+    _ComparisonMixin,
+    _SeriesMixin,
+    _SummaryMixin,
+)
+from ..engine._internals._models import (
+    _StochasticVolatilityModel,
+    _TrendVolatilityModel,
+)
+from ..engine._internals._parameters import _StochasticVolatilityParameters
+from ..engine._internals._posteriors import _SVPosterior as SVPosterior
+from ..engine._internals._posteriors import _UCSVPosterior as UCSVPosterior
+from ..engine._internals._simulators import _simulate_stochastic_volatility
 from ..exceptions import SpecificationError
 from ..state_space.linear_gaussian import LinearGaussianSSM
 from ..state_space.nonlinear import NonlinearSSM
+from ..summary import SummaryTable
 
 __all__ = [
     "SV",
     "UCSV",
+    "SVPosterior",
     "SVResult",
+    "UCSVPosterior",
 ]
 
 
@@ -269,7 +275,7 @@ class SVResult(_SummaryMixin, _SeriesMixin, _ComparisonMixin):
         path tracking the true one:
 
         >>> import numpy as np
-        >>> from cultivars._internals import _simulate_stochastic_volatility
+        >>> from cultivars.engine._internals._simulators import _simulate_stochastic_volatility
         >>> rng = np.random.default_rng(0)
         >>> y, h = _simulate_stochastic_volatility(
         ...     500, mu=-1.0, phi=0.95, sigma2=0.05, mean=0.0, rng=rng
@@ -431,7 +437,7 @@ class SVResult(_SummaryMixin, _SeriesMixin, _ComparisonMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars._internals import _simulate_stochastic_volatility
+            >>> from cultivars.engine._internals._simulators import _simulate_stochastic_volatility
             >>> rng = np.random.default_rng(0)
             >>> y, _ = _simulate_stochastic_volatility(
             ...     300, mu=-1.0, phi=0.95, sigma2=0.05, mean=0.0, rng=rng
@@ -832,7 +838,7 @@ class SV(_StochasticVolatilityModel[SVResult]):
             it and is far slower, so it is not run here:
 
             >>> import numpy as np
-            >>> from cultivars._internals import _simulate_stochastic_volatility
+            >>> from cultivars.engine._internals._simulators import _simulate_stochastic_volatility
             >>> rng = np.random.default_rng(0)
             >>> y, _ = _simulate_stochastic_volatility(
             ...     300, mu=-1.0, phi=0.95, sigma2=0.05, mean=0.0, rng=rng
@@ -864,7 +870,7 @@ class SV(_StochasticVolatilityModel[SVResult]):
         n_particles: int = 500,
         prior: VolatilityPrior | None = None,
         seed: int | None = None,
-    ) -> _SVPosterior:
+    ) -> SVPosterior:
         r"""Sample the posterior.
 
         Both samplers use the same prior: Gaussian ``mu ~ N(m, v)``, Beta
@@ -901,7 +907,7 @@ class SV(_StochasticVolatilityModel[SVResult]):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars._internals import _simulate_stochastic_volatility
+            >>> from cultivars.engine._internals._simulators import _simulate_stochastic_volatility
             >>> rng = np.random.default_rng(0)
             >>> y, h = _simulate_stochastic_volatility(
             ...     500, mu=-1.0, phi=0.95, sigma2=0.05, mean=0.0, rng=rng
@@ -924,7 +930,7 @@ class SV(_StochasticVolatilityModel[SVResult]):
             fit = self._sample_gibbs(
                 n_draws=n_draws, n_burn=n_burn, thin=thin, seed=seed, prior=prior
             )
-            return _SVPosterior._from_gibbs(fit, self)
+            return SVPosterior._from_gibbs(fit, self)
         if method == "particle":
             chain, mean = self._sample_chain(
                 n_particles=n_particles,
@@ -935,11 +941,11 @@ class SV(_StochasticVolatilityModel[SVResult]):
                 seed=seed,
                 prior=prior,
             )
-            return _SVPosterior._from_chain(chain, mean, self, n_particles=n_particles, seed=seed)
+            return SVPosterior._from_chain(chain, mean, self, n_particles=n_particles, seed=seed)
         raise SpecificationError(f"method must be 'gibbs' or 'particle'; got {method!r}.")
 
 
-class UCSV(_TrendVolatilityModel[_UCSVPosterior]):
+class UCSV(_TrendVolatilityModel[UCSVPosterior]):
     r"""Stock and Watson's unobserved-components stochastic-volatility model.
 
     .. math::
@@ -1016,7 +1022,7 @@ class UCSV(_TrendVolatilityModel[_UCSVPosterior]):
         thin: int = 1,
         prior: RandomWalkVolatilityPrior | None = None,
         seed: int | None = None,
-    ) -> _UCSVPosterior:
+    ) -> UCSVPosterior:
         """Run the Gibbs sampler and return the posterior.
 
         Args:
@@ -1045,7 +1051,7 @@ class UCSV(_TrendVolatilityModel[_UCSVPosterior]):
             >>> post.gamma_fixed, post.gamma2_trend_draws.shape, post.n_kept
             (False, (200,), 200)
         """
-        return _UCSVPosterior._from_fit(
+        return UCSVPosterior._from_fit(
             self._sample_gibbs(
                 n_draws=n_draws,
                 n_burn=n_burn,

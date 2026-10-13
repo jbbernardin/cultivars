@@ -157,37 +157,47 @@ from typing import Self
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import (
+from ...engine._core._converters import _mixed_frequency_system
+from ...engine._core._matrices import (
+    _deterministic_columns,
+    _lag_matrix,
+)
+from ...engine._core._notes import (
     _AGGREGATION_NOTE,
     _CHOLESKY_NOTE,
     _MIDAS_CONDITIONAL_NOTE,
     _UNSTABLE_NOTE,
-    Frequency,
-    SummaryTable,
-    Trend,
+)
+from ...engine._core._polynomials import (
     _aggregation_weights,
     _midas_weights,
     _midas_windows,
-    _mixed_frequency_system,
-    _validate_observed,
-    deterministic_columns,
-    lag_matrix,
-    validate_exog_matrix,
 )
-from ..._internals import (
+from ...engine._core._types import (
+    Frequency,
+    Trend,
+)
+from ...engine._core._validators import (
+    _validate_exog_matrix,
+    _validate_observed,
+)
+from ...engine._internals._mixins import (
     _ComparisonMixin,
-    _DurbinKoopmanSmootherResult,
-    _KalmanFilterResult,
-    _LinearGaussianStateSpace,
-    _maximize_likelihood,
-    _MidasProfileObjective,
     _SummaryMixin,
-    _VectorAutoRegressionModel,
     _VectorInferenceMixin,
     _VectorPropagationMixin,
+)
+from ...engine._internals._models import _VectorAutoRegressionModel
+from ...engine._internals._objectives import _MidasProfileObjective
+from ...engine._internals._results import (
+    _DurbinKoopmanSmootherResult,
+    _KalmanFilterResult,
     _VectorResult,
 )
+from ...engine._internals._solvers import _maximize_likelihood
+from ...engine._internals._substrates import _LinearGaussianStateSpace
 from ...exceptions import DimensionError, NumericalError, SpecificationError
+from ...summary import SummaryTable
 
 __all__ = ["MFVAR", "MIDASVAR", "MFVARResult", "MIDASVARResult"]
 
@@ -1274,7 +1284,7 @@ class MIDASVARResult(
                 "doing so would turn a conditional forecast into an unconditional "
                 "forecast without saying so."
             )
-        future = validate_exog_matrix(
+        future = _validate_exog_matrix(
             exog_high_future, nobs=steps * self.period, label="exog_high_future"
         )
         if future.shape[1] != self.k_exog:
@@ -1289,7 +1299,7 @@ class MIDASVARResult(
             full, nobs=low + steps, period=self.period, lags=self.midas_lags, start=low
         )
         compressed = np.einsum("tjm,jm->tm", windows, self.midas_weights)
-        det = deterministic_columns(self.trend, steps, start=low + 1)
+        det = _deterministic_columns(self.trend, steps, start=low + 1)
         history = [self.endog[low - i - 1] for i in range(p)]
         out = np.empty((steps, k), dtype=np.float64)
         for h in range(steps):
@@ -1651,7 +1661,7 @@ class MIDASVAR(_VectorAutoRegressionModel[MIDASVARResult]):
             )
         self._period = int(period)
         rows = int(np.asarray(endog, dtype=np.float64).shape[0])
-        self._exog_high = validate_exog_matrix(
+        self._exog_high = _validate_exog_matrix(
             exog_high, nobs=rows * self._period, label="exog_high"
         )
         lags = self._period if midas_lags is None else midas_lags
@@ -1834,13 +1844,13 @@ class MIDASVAR(_VectorAutoRegressionModel[MIDASVARResult]):
                 f"{self._midas_lags}-sub-period weight window."
             )
         effective = nobs - burn
-        det = deterministic_columns(self._trend, effective, start=trim + burn + 1)
+        det = _deterministic_columns(self._trend, effective, start=trim + burn + 1)
         windows = _midas_windows(
             high, nobs=nobs, period=self._period, lags=self._midas_lags, start=burn
         )
         flat = np.full(self._midas_lags, 1.0 / self._midas_lags, dtype=np.float64)
         compressed = np.einsum("tjm,j->tm", windows, flat)
-        design = np.column_stack([det, lag_matrix(panel, lags, start=burn), compressed])
+        design = np.column_stack([det, _lag_matrix(panel, lags, start=burn), compressed])
         return panel[burn:], design, effective
 
     def _blocks(
@@ -1866,8 +1876,8 @@ class MIDASVAR(_VectorAutoRegressionModel[MIDASVARResult]):
         burn = self._burn_for(self._order)
         nobs = self._endog.shape[0]
         effective = nobs - burn
-        det = deterministic_columns(self._trend, effective, start=burn + 1)
-        base = np.column_stack([det, lag_matrix(self._endog, self._order, start=burn)])
+        det = _deterministic_columns(self._trend, effective, start=burn + 1)
+        base = np.column_stack([det, _lag_matrix(self._endog, self._order, start=burn)])
         windows = _midas_windows(
             self._exog_high,
             nobs=nobs,

@@ -141,12 +141,11 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import Regime, SummaryTable
-from ..._internals import (
-    _SmoothTransitionVectorAutoRegressionModel,
-    _VectorObservedRegimeResult,
-    _VectorSmoothTransitionFit,
-)
+from ...engine._core._types import Regime
+from ...engine._internals._fits import _VectorSmoothTransitionFit
+from ...engine._internals._models import _SmoothTransitionVectorAutoRegressionModel
+from ...engine._internals._results import _VectorObservedRegimeResult
+from ...summary import SummaryTable
 
 __all__ = ["STVAR", "STVARResult"]
 

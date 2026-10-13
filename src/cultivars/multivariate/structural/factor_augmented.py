@@ -117,9 +117,11 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import StructuralResult, SummaryTable
-from ..._internals import _IdentificationModel, _SummaryMixin
+from ...engine._core._protocols import StructuralResult
+from ...engine._internals._mixins import _SummaryMixin
+from ...engine._internals._models import _IdentificationModel
 from ...exceptions import SpecificationError
+from ...summary import SummaryTable
 from ..large_dim.factor_augmented import FAVARResult
 from .zero_restrictions import RecursiveSVAR
 

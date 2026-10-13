@@ -167,18 +167,10 @@ Example:
 
 from __future__ import annotations
 
-from .._internals import (
-    _NonlinearStateSpace as NonlinearSSM,
-)
-from .._internals import (
-    _ParticleFilterResult as ParticleFilterResult,
-)
-from .._internals import (
-    _ParticleSmootherResult as ParticleSmootherResult,
-)
-from .._internals import (
-    _RtsSmootherResult as RtsSmootherResult,
-)
+from ..engine._internals._results import _ParticleFilterResult as ParticleFilterResult
+from ..engine._internals._results import _ParticleSmootherResult as ParticleSmootherResult
+from ..engine._internals._results import _RtsSmootherResult as RtsSmootherResult
+from ..engine._internals._substrates import _NonlinearStateSpace as NonlinearSSM
 
 __all__ = [
     "NonlinearSSM",

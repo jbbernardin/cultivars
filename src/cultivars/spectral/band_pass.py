@@ -70,7 +70,7 @@ are the producers, each validated at construction and applied through
 numerics live in ``_core``: ``_ideal_weights`` gives :math:`b_0, \dots,
 b_K` at any truncation, which BK mirrors and recentres and CF extends to
 the sample length; ``_validate_band`` enforces ``2 <= low < high``; and
-``validate_endog_matrix`` coerces a series or panel to ``(nobs, k)``.
+``_validate_endog_matrix`` coerces a series or panel to ``(nobs, k)``.
 The Hodrick-Prescott high-pass filter lives in
 :mod:`~cultivars.spectral.filters`, and the spectral estimators that
 show where a series' power sits before a band is chosen in
@@ -114,9 +114,11 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from .._core import SummaryTable, _ideal_weights, _validate_band, validate_endog_matrix
-from .._internals import _SummaryMixin
+from ..engine._core._spectra import _ideal_weights
+from ..engine._core._validators import _validate_band, _validate_endog_matrix
+from ..engine._internals._mixins import _SummaryMixin
 from ..exceptions import SpecificationError
+from ..summary import SummaryTable
 
 __all__ = ["BandPassResult", "BaxterKingFilter", "ChristianoFitzgeraldFilter"]
 
@@ -425,7 +427,7 @@ class BaxterKingFilter:
                 ...
             cultivars.exceptions.SpecificationError: a sample of 24 rows is too short for ...
         """
-        panel = validate_endog_matrix(data)
+        panel = _validate_endog_matrix(data)
         nobs = panel.shape[0]
         cut = self._truncation
         if nobs <= 2 * cut:
@@ -570,7 +572,7 @@ class ChristianoFitzgeraldFilter:
             >>> int(res.symmetric.argmax()), int(res.symmetric.sum())
             (32, 236)
         """
-        panel = validate_endog_matrix(data)
+        panel = _validate_endog_matrix(data)
         nobs, k = panel.shape
         weights = _ideal_weights(nobs, self._low, self._high)
         endpoint = -0.5 * weights[0] - np.concatenate([np.zeros(1), np.cumsum(weights[1:])])

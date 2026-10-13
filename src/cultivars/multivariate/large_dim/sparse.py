@@ -136,13 +136,12 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import Penalty, SummaryTable
-from ..._internals import (
-    _SparseVectorAutoRegressionModel,
-    _SummaryMixin,
-    _VectorSparseFit,
-)
+from ...engine._core._types import Penalty
+from ...engine._internals._fits import _VectorSparseFit
+from ...engine._internals._mixins import _SummaryMixin
+from ...engine._internals._models import _SparseVectorAutoRegressionModel
 from ...exceptions import SpecificationError
+from ...summary import SummaryTable
 
 __all__ = ["SparseVAR", "SparseVARResult"]
 

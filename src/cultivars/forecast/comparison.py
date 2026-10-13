@@ -124,20 +124,24 @@ import numpy as np
 import numpy.typing as npt
 import scipy.stats as sst
 
-from .._core import (
-    _MIN_COMPARISON_ORIGINS,
-    SummaryTable,
+from ..engine._core._defaults import _MIN_COMPARISON_ORIGINS
+from ..engine._core._estimators import (
     _bartlett_long_run_variance,
     _clark_west,
-    _conditional_instruments,
     _forecast_encompassing,
     _giacomini_white,
     _mincer_zarnowitz,
+)
+from ..engine._core._matrices import (
+    _conditional_instruments,
+)
+from ..engine._core._validators import (
     _validate_aligned_series,
 )
-from .._internals import _ForecastComparisonTest as ForecastComparisonTest
-from .._internals import _SummaryMixin
+from ..engine._internals._mixins import _SummaryMixin
+from ..engine._internals._tests import _ForecastComparisonTest as ForecastComparisonTest
 from ..exceptions import DimensionError, NumericalError, SpecificationError
+from ..summary import SummaryTable
 
 __all__ = [
     "ClarkWestTest",

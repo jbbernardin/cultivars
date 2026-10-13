@@ -128,13 +128,12 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
-from .._core import SummaryTable, trailing_lag
-from .._internals import (
-    _ObservedRegimeResult,
-    _SmoothTransitionFit,
-    _SmoothTransitionModel,
-)
+from ..engine._core._matrices import _trailing_lag
+from ..engine._internals._fits import _SmoothTransitionFit
+from ..engine._internals._models import _SmoothTransitionModel
+from ..engine._internals._results import _ObservedRegimeResult
 from ..state_space.nonlinear import NonlinearSSM
+from ..summary import SummaryTable
 
 __all__ = ["ESTAR", "LSTAR", "STARResult"]
 
@@ -264,7 +263,7 @@ class STARResult(_ObservedRegimeResult):
             >>> res.order, res.delay, res.nobs, res.threshold_values.shape
             (2, 2, 298, (298,))
         """
-        values = trailing_lag(model.endog, delay=fit.delay, length=fit.nobs)
+        values = _trailing_lag(model.endog, delay=fit.delay, length=fit.nobs)
         return cls(
             endog=model.endog,
             fittedvalues=fit.fittedvalues,
@@ -300,12 +299,12 @@ class STARResult(_ObservedRegimeResult):
             The weights reproduce the fitted values from the two blocks:
 
             >>> import numpy as np
-            >>> from cultivars._core import lag_matrix
+            >>> from cultivars.engine._core._matrices import _lag_matrix
             >>> rng = np.random.default_rng(0)
             >>> y = rng.standard_normal(300)
             >>> res = LSTAR(y, order=1).fit()
             >>> w = res.regime_weight
-            >>> base = np.column_stack([np.ones(res.nobs), lag_matrix(y, 1)])
+            >>> base = np.column_stack([np.ones(res.nobs), _lag_matrix(y, 1)])
             >>> blend = (1 - w) * (base @ res.lower_params) + w * (base @ res.upper_params)
             >>> bool(np.allclose(blend, res.fittedvalues)), bool(0 <= w.min() <= w.max() <= 1)
             (True, True)

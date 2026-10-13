@@ -130,28 +130,30 @@ from typing import NoReturn
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import (
+from ...engine._core._matrices import (
+    _deterministic_columns,
+    _lag_matrix,
+)
+from ...engine._core._notes import (
     _CHOLESKY_NOTE,
     _HR_CONDITIONAL_NOTE,
     _UNSTABLE_NOTE,
     _VARMA_IDENTIFICATION_NOTE,
-    SummaryTable,
-    Trend,
-    deterministic_columns,
-    lag_matrix,
-    validate_order_tuple,
 )
-from ..._internals import (
+from ...engine._core._types import Trend
+from ...engine._core._validators import _validate_order_tuple
+from ...engine._internals._assessments import _StabilityAssessment
+from ...engine._internals._mixins import (
     _ComparisonMixin,
-    _StabilityAssessment,
     _SummaryMixin,
-    _VectorAutoRegressionModel,
     _VectorInferenceMixin,
-    _VectorMoments,
     _VectorPropagationMixin,
-    _VectorResult,
 )
+from ...engine._internals._models import _VectorAutoRegressionModel
+from ...engine._internals._moments import _VectorMoments
+from ...engine._internals._results import _VectorResult
 from ...exceptions import SpecificationError
+from ...summary import SummaryTable
 
 __all__ = ["VARMA", "VARMAResult"]
 
@@ -481,7 +483,7 @@ class VARMAResult(
             raise SpecificationError(f"steps must be at least 1; got {steps}.")
         k, p, q = self.k_endog, self.order, self.ma_order
         n = self.endog.shape[0]
-        det = deterministic_columns(self.trend, steps, start=n + 1)
+        det = _deterministic_columns(self.trend, steps, start=n + 1)
         history = [self.endog[n - i - 1] for i in range(p)]
         tail = [
             self.resid[-m - 1] if m < self.resid.shape[0] else np.zeros(k, dtype=np.float64)
@@ -677,7 +679,7 @@ class VARMA(_VectorAutoRegressionModel[VARMAResult]):
             Traceback (most recent call last):
             cultivars.exceptions.SpecificationError: order must have 2 elements ('p', 'q'); ...
         """
-        p, q = validate_order_tuple(order, ("p", "q"))
+        p, q = _validate_order_tuple(order, ("p", "q"))
         if q < 1:
             raise SpecificationError(
                 "q must be at least 1; a VARMA with no moving-average block is a "
@@ -860,11 +862,11 @@ class VARMA(_VectorAutoRegressionModel[VARMAResult]):
         """
         nobs = self._endog.shape[0]
         effective = nobs - start
-        det = deterministic_columns(self._trend, effective, start=start + 1)
+        det = _deterministic_columns(self._trend, effective, start=start + 1)
         design = np.column_stack(
             [
                 det,
-                lag_matrix(self._endog, self._order, start=start),
+                _lag_matrix(self._endog, self._order, start=start),
                 self._innovation_block(innovations, start),
             ]
         )
@@ -940,7 +942,7 @@ class VARMA(_VectorAutoRegressionModel[VARMAResult]):
             True
         """
         nobs, k = self._endog.shape
-        det = deterministic_columns(self._trend, nobs, start=1)
+        det = _deterministic_columns(self._trend, nobs, start=1)
         base = det @ deterministic if deterministic.shape[0] else np.zeros((nobs, k))
         u = np.zeros((nobs, k), dtype=np.float64)
         for t in range(self._order, nobs):
@@ -988,8 +990,8 @@ class VARMA(_VectorAutoRegressionModel[VARMAResult]):
         nobs = self._endog.shape[0]
         h = self._long_order()
 
-        det1 = deterministic_columns(self._trend, nobs - h, start=h + 1)
-        design1 = np.column_stack([det1, lag_matrix(self._endog, h, start=h)])
+        det1 = _deterministic_columns(self._trend, nobs - h, start=h + 1)
+        design1 = np.column_stack([det1, _lag_matrix(self._endog, h, start=h)])
         _, resid1 = self._least_squares(self._endog[h:], design1)
         innovations = np.zeros((nobs, k), dtype=np.float64)
         innovations[h:] = resid1

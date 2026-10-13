@@ -127,9 +127,11 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import SummaryTable, principal_components, validate_endog_matrix
-from ..._internals import _SummaryMixin
+from ...engine._core._estimators import _principal_components
+from ...engine._core._validators import _validate_endog_matrix
+from ...engine._internals._mixins import _SummaryMixin
 from ...exceptions import DimensionError, SpecificationError
+from ...summary import SummaryTable
 from ..reduced_form.vector_autoregression import VAR, VARResult
 
 __all__ = ["DFM", "DFMResult"]
@@ -527,7 +529,7 @@ class DFM:
             >>> model._n_factors, model._max_factors, model._series_names[-1]
             (None, 5, 'x5')
         """
-        self._panel = validate_endog_matrix(panel)
+        self._panel = _validate_endog_matrix(panel)
         nobs, n_series = self._panel.shape
         ceiling = min(nobs - 1, n_series)
         if n_factors is not None:
@@ -593,7 +595,7 @@ class DFM:
             (2, (6,), 2)
         """
         nobs, n_series = standardized.shape
-        scores, loadings, _ = principal_components(standardized, max_factors)
+        scores, loadings, _ = _principal_components(standardized, max_factors)
         penalty = (n_series + nobs) / (n_series * nobs) * np.log(min(n_series, nobs))
         values = np.empty(max_factors)
         for r in range(1, max_factors + 1):
@@ -636,7 +638,7 @@ class DFM:
             count, criterion = self._bai_ng(standardized, self._max_factors)
         else:
             count, criterion = self._n_factors, np.zeros(0)
-        scores, loadings, shares = principal_components(standardized, count)
+        scores, loadings, shares = _principal_components(standardized, count)
         factor_result = VAR(
             scores,
             order=self._order,

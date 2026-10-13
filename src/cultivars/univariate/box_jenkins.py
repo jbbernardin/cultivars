@@ -130,27 +130,33 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
-from .._core import (
-    _SIMULATION_BURN,
-    InformationCriteria,
-    SummaryTable,
-    deterministic_columns,
-    expand_ar,
-    expand_ma,
-    n_deterministic,
+from ..engine._core._defaults import _SIMULATION_BURN
+from ..engine._core._matrices import (
+    _deterministic_columns,
+    _n_deterministic,
 )
-from .._internals import (
-    _BoxJenkinsFit,
-    _BoxJenkinsModel,
+from ..engine._core._polynomials import (
+    _expand_ar,
+    _expand_ma,
+)
+from ..engine._internals._fits import _BoxJenkinsFit
+from ..engine._internals._mixins import (
     _ComparisonMixin,
-    _integrate,
     _InvertibilityMixin,
     _SeriesMixin,
-    _simulate_arma,
     _StationarityMixin,
     _SummaryMixin,
 )
+from ..engine._internals._models import _BoxJenkinsModel
+from ..engine._internals._simulators import (
+    _integrate,
+    _simulate_arma,
+)
 from ..exceptions import SpecificationError
+from ..summary import (
+    InformationCriteria,
+    SummaryTable,
+)
 
 __all__ = ["ARIMA", "ARIMAX", "ARMA", "SARIMA", "SARIMAX", "ARMAResult"]
 
@@ -379,7 +385,7 @@ class ARMAResult(
             >>> bool(np.isclose(expanded[4], -res.ar_params[0] * res.seasonal_ar_params[0]))
             True
         """
-        return expand_ar(self.ar_params, self.seasonal_ar_params, self.seasonal_period)
+        return _expand_ar(self.ar_params, self.seasonal_ar_params, self.seasonal_period)
 
     def _invertibility_ma(self) -> npt.NDArray[np.float64]:
         r"""The multiplied polynomial :math:`\theta(L)\,\Theta(L^s)`, sign-corrected.
@@ -397,7 +403,7 @@ class ARMAResult(
             >>> bool(np.isclose(res._invertibility_ma()[0], -res.ma_params[0]))
             True
         """
-        return -expand_ma(self.ma_params, self.seasonal_ma_params, self.seasonal_period)
+        return -_expand_ma(self.ma_params, self.seasonal_ma_params, self.seasonal_period)
 
     def simulate(
         self,
@@ -457,21 +463,21 @@ class ARMAResult(
             )
         rng = seed if isinstance(seed, np.random.Generator) else np.random.default_rng(seed)
         d, cap_d, s = self.order[1], self.seasonal_order[1], self.seasonal_order[3]
-        det = n_deterministic(self.trend)
+        det = _n_deterministic(self.trend)
         differenced = n - d - s * cap_d
         if differenced < 1:
             raise SpecificationError(
                 f"n must exceed the integration orders ({d + s * cap_d}); got {n}."
             )
         intercept = (
-            deterministic_columns(self.trend, differenced) @ self.beta[:det]
+            _deterministic_columns(self.trend, differenced) @ self.beta[:det]
             if det
             else np.zeros(differenced)
         )
         w = _simulate_arma(
             differenced,
-            ar=expand_ar(self.ar_params, self.seasonal_ar_params, s),
-            ma=expand_ma(self.ma_params, self.seasonal_ma_params, s),
+            ar=_expand_ar(self.ar_params, self.seasonal_ar_params, s),
+            ma=_expand_ma(self.ma_params, self.seasonal_ma_params, s),
             sigma=float(np.sqrt(self.sigma2)),
             rng=rng,
             intercept=intercept,
@@ -500,7 +506,7 @@ class ARMAResult(
             ['x1', 'x2', 'ar.L1', 'sigma2']
         """
         out: dict[str, float] = {}
-        det = n_deterministic(self.trend)
+        det = _n_deterministic(self.trend)
         names = (["const", "trend"][:det]) + [f"x{i}" for i in range(1, self.k_exog + 1)]
         for name, value in zip(names, self.beta, strict=True):
             out[name] = float(value)

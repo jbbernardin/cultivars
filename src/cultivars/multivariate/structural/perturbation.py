@@ -151,23 +151,30 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import _SIMULATION_BURN, SummaryTable
-from ..._internals import (
+from ...engine._core._defaults import _SIMULATION_BURN
+from ...engine._internals._fits import _PerturbationFit
+from ...engine._internals._mixins import _SummaryMixin
+from ...engine._internals._models import _PerturbationModel
+from ...engine._internals._posteriors import _PerturbationDSGEPosterior as PerturbationDSGEPosterior
+from ...engine._internals._simulators import (
     _impulse_responses,
-    _PerturbationDSGEPosterior,
-    _PerturbationFit,
-    _PerturbationModel,
-    _PerturbationSolution,
     _simulate_perturbation,
-    _SummaryMixin,
+)
+from ...engine._internals._solutions import _PerturbationSolution as PerturbationDSGESolution
+from ...engine._internals._specifications import (
+    _PerturbationModelSpecification as PerturbationModelSpecification,
 )
 from ...exceptions import SpecificationError
 from ...state_space.linear_gaussian import LinearGaussianSSM
 from ...state_space.nonlinear import NonlinearSSM
+from ...summary import SummaryTable
 
 __all__ = [
     "PerturbationDSGE",
+    "PerturbationDSGEPosterior",
     "PerturbationDSGEResult",
+    "PerturbationDSGESolution",
+    "PerturbationModelSpecification",
 ]
 
 
@@ -276,7 +283,7 @@ class PerturbationDSGEResult(_SummaryMixin):
     theta: npt.NDArray[np.float64]
     """The ``(n_params,)`` estimate, in the model's own (constrained) space."""
 
-    solution: _PerturbationSolution = field(repr=False)
+    solution: PerturbationDSGESolution = field(repr=False)
     """The perturbation solution at :attr:`theta`. Kept out of the repr."""
 
     llf: float
@@ -710,7 +717,7 @@ class PerturbationDSGE(_PerturbationModel[PerturbationDSGEResult]):
         """
         return tuple(self._spec.parameter_names)
 
-    def solve(self, theta: npt.ArrayLike) -> _PerturbationSolution:
+    def solve(self, theta: npt.ArrayLike) -> PerturbationDSGESolution:
         """Solve the model at a parameter point.
 
         Args:
@@ -927,7 +934,7 @@ class PerturbationDSGE(_PerturbationModel[PerturbationDSGEResult]):
         thin: int = 1,
         proposal_scale: npt.ArrayLike | None = None,
         seed: int | None = None,
-    ) -> _PerturbationDSGEPosterior:
+    ) -> PerturbationDSGEPosterior:
         """Particle marginal Metropolis-Hastings under the specification's prior.
 
         Each iteration proposes in the unconstrained space, estimates the
@@ -991,4 +998,4 @@ class PerturbationDSGE(_PerturbationModel[PerturbationDSGEResult]):
             proposal_scale=proposal_scale,
             seed=seed,
         )
-        return _PerturbationDSGEPosterior._from_fit(fit, self)
+        return PerturbationDSGEPosterior._from_fit(fit, self)

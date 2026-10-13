@@ -128,22 +128,22 @@ from typing import Self
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import (
+from ...engine._core._matrices import _deterministic_columns
+from ...engine._core._notes import (
     _CHOLESKY_NOTE,
     _UNSTABLE_NOTE,
-    SummaryTable,
-    deterministic_columns,
 )
-from ..._internals import (
+from ...engine._internals._fits import _VectorAutoRegressionFit
+from ...engine._internals._mixins import (
     _ComparisonMixin,
-    _PanelVectorAutoRegressionModel,
     _SummaryMixin,
-    _VectorAutoRegressionFit,
     _VectorInferenceMixin,
     _VectorPropagationMixin,
-    _VectorResult,
 )
+from ...engine._internals._models import _PanelVectorAutoRegressionModel
+from ...engine._internals._results import _VectorResult
 from ...exceptions import SpecificationError
+from ...summary import SummaryTable
 
 __all__ = ["PanelVAR", "PanelVARResult"]
 
@@ -543,7 +543,7 @@ class PanelVARResult(
         if self.effects == "unit":
             baseline = np.tile(self.deterministic[index], (steps, 1))
         elif self.deterministic.shape[0]:
-            det = deterministic_columns(self.trend, steps, start=nobs + 1)
+            det = _deterministic_columns(self.trend, steps, start=nobs + 1)
             baseline = det @ self.deterministic
         else:
             baseline = np.zeros((steps, k), dtype=np.float64)

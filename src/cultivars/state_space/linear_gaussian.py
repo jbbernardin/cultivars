@@ -137,14 +137,8 @@ Example:
 
 from __future__ import annotations
 
-from .._internals import (
-    _DurbinKoopmanSmootherResult as DurbinKoopmanSmootherResult,
-)
-from .._internals import (
-    _KalmanFilterResult as KalmanFilterResult,
-)
-from .._internals import (
-    _LinearGaussianStateSpace as LinearGaussianSSM,
-)
+from ..engine._internals._results import _DurbinKoopmanSmootherResult as DurbinKoopmanSmootherResult
+from ..engine._internals._results import _KalmanFilterResult as KalmanFilterResult
+from ..engine._internals._substrates import _LinearGaussianStateSpace as LinearGaussianSSM
 
 __all__ = ["DurbinKoopmanSmootherResult", "KalmanFilterResult", "LinearGaussianSSM"]

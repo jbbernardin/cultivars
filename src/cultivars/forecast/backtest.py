@@ -63,7 +63,7 @@ would have thrown away exactly what the test uses; the ``(H, k)``
 averages are conveniences on top.
 
 Layout. :class:`Backtest` is the harness and :class:`BacktestResult`
-the record it returns. The scores live in ``_core``: ``crps_from_draws``
+the record it returns. The scores live in ``_core``: ``_crps_from_draws``
 is the exact sample CRPS, ``_kernel_log_score`` the negative log
 predictive density by Gaussian kernel, and ``_pinball_loss`` the
 quantile loss; ``PredictiveResult`` is the protocol that marks a result
@@ -122,17 +122,19 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from .._core import (
-    PredictiveResult,
-    SummaryTable,
+from ..engine._core._protocols import PredictiveResult
+from ..engine._core._scores import (
+    _crps_from_draws,
     _kernel_log_score,
     _pinball_loss,
+)
+from ..engine._core._validators import (
     _validate_names,
     _variable_names,
-    crps_from_draws,
 )
-from .._internals import _SummaryMixin
+from ..engine._internals._mixins import _SummaryMixin
 from ..exceptions import DimensionError, NumericalError, SpecificationError
+from ..summary import SummaryTable
 
 __all__ = ["Backtest", "BacktestResult"]
 
@@ -422,7 +424,7 @@ class BacktestResult(_SummaryMixin):
                 f"{kind} losses need predictive draws; this backtest recorded point forecasts "
                 "only. Backtest a result exposing forecast_paths()."
             )
-        scorer = crps_from_draws if kind == "crps" else _kernel_log_score
+        scorer = _crps_from_draws if kind == "crps" else _kernel_log_score
         out = np.empty(self.realized.shape)
         for t in range(self.n_origins):
             for h in range(self.horizons):

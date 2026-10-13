@@ -152,30 +152,34 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import (
+from ...bayes.priors import VolatilityPrior
+from ...engine._core._estimators import _variance_ratio_test
+from ...engine._core._notes import (
     _LABEL_NOTE,
     _SCALE_NOTE,
-    ClosedSystemResult,
-    SummaryTable,
-    _fractional_spectrum,
-    _validate_quantiles,
-    _variance_ratio_test,
 )
-from ..._internals import (
-    _ComparisonMixin,
-    _ConvergenceMixin,
-    _long_memory_quasi_state_space,
+from ...engine._core._protocols import ClosedSystemResult
+from ...engine._core._spectra import _fractional_spectrum
+from ...engine._core._validators import _validate_quantiles
+from ...engine._internals._emitters import _long_memory_quasi_state_space
+from ...engine._internals._fits import (
     _LongMemoryVolatilityFit,
-    _LongMemoryVolatilityModel,
-    _LongMemoryVolatilityParameters,
-    _SeriesMixin,
-    _SummaryMixin,
-    _VolatilityIdentificationModel,
     _VolatilityStructuralFit,
 )
-from ...bayes.priors import VolatilityPrior
+from ...engine._internals._mixins import (
+    _ComparisonMixin,
+    _ConvergenceMixin,
+    _SeriesMixin,
+    _SummaryMixin,
+)
+from ...engine._internals._models import (
+    _LongMemoryVolatilityModel,
+    _VolatilityIdentificationModel,
+)
+from ...engine._internals._parameters import _LongMemoryVolatilityParameters
 from ...exceptions import SpecificationError
 from ...state_space.linear_gaussian import LinearGaussianSSM
+from ...summary import SummaryTable
 from .zero_restrictions import SVARResult
 
 __all__ = [
@@ -495,7 +499,7 @@ class StochasticVolatilitySVAR(_VolatilityIdentificationModel[StochasticVolatili
 
     Example:
         >>> rng = np.random.default_rng(0)
-        >>> from cultivars.multivariate.reduced_form import VAR
+        >>> from cultivars.multivariate.reduced_form.vector_autoregression import VAR
         >>> n = 400
         >>> phi, sigma = np.array([0.97, 0.6]), np.array([0.2, 0.6])
         >>> h = np.zeros((n, 2))
@@ -653,11 +657,11 @@ class LongMemorySVResult(_SummaryMixin, _SeriesMixin, _ComparisonMixin):
         hyperbolically:
 
         >>> import numpy as np
-        >>> from cultivars._core import fractional_difference_weights
+        >>> from cultivars.engine._core._transforms import _fractional_difference_weights
         >>> rng = np.random.default_rng(0)
         >>> n, burn = 1500, 2000
         >>> eta = 0.5 * rng.standard_normal(n + burn)
-        >>> weights = fractional_difference_weights(-0.4, n + burn)
+        >>> weights = _fractional_difference_weights(-0.4, n + burn)
         >>> v = np.convolve(eta, weights)[burn : n + burn]
         >>> y = np.exp((-1.0 + v) / 2) * rng.standard_normal(n)
         >>> res = LongMemorySV(y, mean="zero").fit()
@@ -867,11 +871,11 @@ class LongMemorySVResult(_SummaryMixin, _SeriesMixin, _ComparisonMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars._core import fractional_difference_weights
+            >>> from cultivars.engine._core._transforms import _fractional_difference_weights
             >>> rng = np.random.default_rng(0)
             >>> n, burn = 1500, 2000
             >>> eta = 0.5 * rng.standard_normal(n + burn)
-            >>> weights = fractional_difference_weights(-0.4, n + burn)
+            >>> weights = _fractional_difference_weights(-0.4, n + burn)
             >>> v = np.convolve(eta, weights)[burn : n + burn]
             >>> y = np.exp((-1.0 + v) / 2) * rng.standard_normal(n)
             >>> res = LongMemorySV(y, mean="zero").fit()
@@ -1096,11 +1100,11 @@ class LongMemorySV(_LongMemoryVolatilityModel[LongMemorySVResult]):
         unable to separate the two:
 
         >>> import numpy as np
-        >>> from cultivars._core import fractional_difference_weights
+        >>> from cultivars.engine._core._transforms import _fractional_difference_weights
         >>> rng = np.random.default_rng(0)
         >>> n, burn = 1500, 2000
         >>> eta = 0.5 * rng.standard_normal(n + burn)
-        >>> weights = fractional_difference_weights(-0.4, n + burn)
+        >>> weights = _fractional_difference_weights(-0.4, n + burn)
         >>> v = np.convolve(eta, weights)[burn : n + burn]
         >>> y = np.exp((-1.0 + v) / 2) * rng.standard_normal(n)
         >>> pure = LongMemorySV(y, mean="zero").fit()

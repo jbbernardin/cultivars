@@ -145,19 +145,11 @@ Example:
 
 from __future__ import annotations
 
-from .._internals import (
-    _HamiltonFilterResult as HamiltonFilterResult,
-)
-from .._internals import (
-    _KimFilterResult as KimFilterResult,
-)
-from .._internals import (
-    _KimSmootherResult as KimSmootherResult,
-)
-from .._internals import (
-    _MarkovSwitchingStateSpace as MarkovSwitchingSSM,
-)
-from .._internals import (
+from ..engine._internals._results import _HamiltonFilterResult as HamiltonFilterResult
+from ..engine._internals._results import _KimFilterResult as KimFilterResult
+from ..engine._internals._results import _KimSmootherResult as KimSmootherResult
+from ..engine._internals._substrates import _MarkovSwitchingStateSpace as MarkovSwitchingSSM
+from ..engine._internals._substrates import (
     _RegimeSwitchingLinearStateSpace as RegimeSwitchingLinearSSM,
 )
 

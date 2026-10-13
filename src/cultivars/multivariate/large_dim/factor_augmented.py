@@ -134,15 +134,15 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import (
-    SummaryTable,
-    Trend,
+from ...engine._core._estimators import _principal_components
+from ...engine._core._types import Trend
+from ...engine._core._validators import (
+    _validate_exog_matrix,
     _validate_wide_panel,
-    principal_components,
-    validate_exog_matrix,
 )
-from ..._internals import _SummaryMixin
+from ...engine._internals._mixins import _SummaryMixin
 from ...exceptions import SpecificationError
+from ...summary import SummaryTable
 from ..reduced_form.vector_autoregression import VAR, VARResult
 
 __all__ = ["FAVAR", "FAVARResult"]
@@ -554,7 +554,7 @@ class FAVAR:
         """
         self._panel = _validate_wide_panel(panel, label="panel")
         nobs, n_series = self._panel.shape
-        self._observed = validate_exog_matrix(observed, nobs=nobs, label="observed")
+        self._observed = _validate_exog_matrix(observed, nobs=nobs, label="observed")
         if int(n_factors) != n_factors or n_factors < 1:
             raise SpecificationError(f"n_factors must be an integer >= 1; got {n_factors!r}.")
         if n_factors > min(nobs - 1, n_series):
@@ -627,7 +627,7 @@ class FAVAR:
             >>> scores.shape, shares.shape, bool(shares[0] >= shares[1])
             ((100, 2), (2,), True)
         """
-        scores, _, shares = principal_components(standardized, count)
+        scores, _, shares = _principal_components(standardized, count)
         return scores, shares
 
     def fit(self) -> FAVARResult:

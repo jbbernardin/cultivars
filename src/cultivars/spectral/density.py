@@ -54,15 +54,15 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from .._core import (
-    ClosedSystemResult,
-    SummaryTable,
-    frequency_grid,
-    spectral_matrix,
-    transfer_function,
+from ..engine._core._protocols import ClosedSystemResult
+from ..engine._core._spectra import (
+    _frequency_grid,
+    _spectral_matrix,
+    _transfer_function,
 )
-from .._internals import _SummaryMixin
+from ..engine._internals._mixins import _SummaryMixin
 from ..exceptions import SpecificationError
+from ..summary import SummaryTable
 
 __all__ = ["SpectralDensity", "SpectralDensityResult"]
 
@@ -657,10 +657,10 @@ class SpectralDensity:
             True
         """
         result = self._result
-        grid = frequency_grid(self._n_frequencies)
-        transfer = transfer_function(np.asarray(result.coefficients), grid)
+        grid = _frequency_grid(self._n_frequencies)
+        transfer = _transfer_function(np.asarray(result.coefficients), grid)
         return SpectralDensityResult(
             names=tuple(result.names),
             frequencies=grid,
-            density=spectral_matrix(transfer, np.asarray(result.sigma_u)),
+            density=_spectral_matrix(transfer, np.asarray(result.sigma_u)),
         )

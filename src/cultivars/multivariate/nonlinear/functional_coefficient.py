@@ -141,13 +141,12 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import SummaryTable, companion_matrix
-from ..._internals import (
-    _FunctionalCoefficientVectorAutoRegressionModel,
-    _SummaryMixin,
-    _VectorFunctionalFit,
-)
+from ...engine._core._matrices import _companion_matrix
+from ...engine._internals._fits import _VectorFunctionalFit
+from ...engine._internals._mixins import _SummaryMixin
+from ...engine._internals._models import _FunctionalCoefficientVectorAutoRegressionModel
 from ...exceptions import SpecificationError
+from ...summary import SummaryTable
 
 __all__ = ["FunctionalCoefficientVAR", "FunctionalCoefficientVARResult"]
 
@@ -589,7 +588,7 @@ class FunctionalCoefficientVARResult(_SummaryMixin):
         """
         out = np.empty(len(self.grid))
         for g, u in enumerate(self.grid):
-            eigs = np.linalg.eigvals(companion_matrix(self.coefficients_at(float(u))))
+            eigs = np.linalg.eigvals(_companion_matrix(self.coefficients_at(float(u))))
             out[g] = float(np.abs(eigs).max(initial=0.0))
         return out
 
@@ -664,7 +663,7 @@ class FunctionalCoefficientVARResult(_SummaryMixin):
             selector = np.zeros((k, k * p))
             selector[:, :k] = np.eye(k)
             power = np.eye(k * p)
-            companion = companion_matrix(stack)
+            companion = _companion_matrix(stack)
             for h in range(horizon + 1):
                 psi[h] = selector @ power @ selector.T
                 power = power @ companion

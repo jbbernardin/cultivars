@@ -132,13 +132,21 @@ import numpy as np
 import numpy.typing as npt
 from scipy.stats import chi2
 
-from .._core import (
+from ..engine._core._defaults import (
     _COHERENCE_SURROGATES,
     _DEFAULT_ALPHA,
     _MIN_SPECTRUM_OBS,
     _MORLET_OMEGA0,
     _SCALES_PER_OCTAVE,
-    SummaryTable,
+)
+from ..engine._core._validators import (
+    _validate_aligned,
+    _validate_choice,
+    _validate_endog,
+    _validate_open_interval,
+    _validate_order,
+)
+from ..engine._core._wavelets import (
     _coherence_surrogates,
     _cone_of_influence,
     _modwt,
@@ -147,14 +155,10 @@ from .._core import (
     _modwt_variance,
     _morlet_scales,
     _wavelet_coherence,
-    validate_aligned,
-    validate_choice,
-    validate_endog,
-    validate_open_interval,
-    validate_order,
 )
-from .._internals import _SummaryMixin
+from ..engine._internals._mixins import _SummaryMixin
 from ..exceptions import SpecificationError
+from ..summary import SummaryTable
 
 __all__ = ["MODWT", "MODWTResult", "WaveletCoherence", "WaveletCoherenceResult"]
 
@@ -536,8 +540,8 @@ class MODWT:
                 ...
             cultivars.exceptions.SpecificationError: levels must be >= 1; got 0.
         """
-        self._wavelet = validate_choice(wavelet, ("haar", "d4", "la8"), "wavelet")
-        self._levels = None if levels is None else validate_order(levels, "levels", minimum=1)
+        self._wavelet = _validate_choice(wavelet, ("haar", "d4", "la8"), "wavelet")
+        self._levels = None if levels is None else _validate_order(levels, "levels", minimum=1)
 
     def transform(self, endog: npt.ArrayLike) -> MODWTResult:
         """Decompose a series.
@@ -568,7 +572,7 @@ class MODWT:
                 ...
             cultivars.exceptions.SpecificationError: 6 levels of the la8 wavelet exceed what 256 ...
         """
-        y = validate_endog(endog)
+        y = _validate_endog(endog)
         n = y.shape[0]
         if n < _MIN_SPECTRUM_OBS:
             raise SpecificationError(
@@ -1011,11 +1015,11 @@ class WaveletCoherence:
                 ...
             cultivars.exceptions.SpecificationError: surrogates must be >= 0; got -1.
         """
-        self._omega0 = validate_open_interval(omega0, "omega0", low=4.0, high=np.inf)
-        self._per_octave = validate_order(per_octave, "per_octave", minimum=1)
-        self._smallest = validate_open_interval(smallest, "smallest", low=1.0, high=np.inf)
-        self._surrogates = validate_order(surrogates, "surrogates", minimum=0)
-        self._alpha = validate_open_interval(alpha, "alpha", low=0.0, high=1.0)
+        self._omega0 = _validate_open_interval(omega0, "omega0", low=4.0, high=np.inf)
+        self._per_octave = _validate_order(per_octave, "per_octave", minimum=1)
+        self._smallest = _validate_open_interval(smallest, "smallest", low=1.0, high=np.inf)
+        self._surrogates = _validate_order(surrogates, "surrogates", minimum=0)
+        self._alpha = _validate_open_interval(alpha, "alpha", low=0.0, high=1.0)
         self._seed = seed
 
     def compute(self, first: npt.ArrayLike, second: npt.ArrayLike) -> WaveletCoherenceResult:
@@ -1050,9 +1054,9 @@ class WaveletCoherence:
                 ...
             cultivars.exceptions.DimensionError: second must be one-dimensional with length 128; ...
         """
-        x = validate_endog(first)
+        x = _validate_endog(first)
         n = x.shape[0]
-        y = validate_aligned(second, n, "second")
+        y = _validate_aligned(second, n, "second")
         if n < _MIN_SPECTRUM_OBS:
             raise SpecificationError(
                 f"wavelet coherence needs at least {_MIN_SPECTRUM_OBS} observations; got {n}."

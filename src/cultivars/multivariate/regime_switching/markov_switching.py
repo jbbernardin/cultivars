@@ -139,23 +139,25 @@ import numpy as np
 import numpy.typing as npt
 from scipy.optimize import minimize
 
-from ..._core import (
-    InformationCriteria,
-    ProbabilityType,
-    StructuralResult,
-    SummaryTable,
-    validate_choice,
-    validate_endog_matrix,
+from ...engine._core._protocols import StructuralResult
+from ...engine._core._types import ProbabilityType
+from ...engine._core._validators import (
+    _validate_choice,
+    _validate_endog_matrix,
 )
-from ..._internals import (
+from ...engine._internals._fits import _VectorMarkovSwitchingFit
+from ...engine._internals._mixins import (
     _ComparisonMixin,
-    _MarkovSwitchingVectorAutoRegressionModel,
-    _RegimeSwitchingLinearStateSpace,
-    _RegimeSystemResult,
     _SummaryMixin,
-    _VectorMarkovSwitchingFit,
 )
+from ...engine._internals._models import _MarkovSwitchingVectorAutoRegressionModel
+from ...engine._internals._results import _RegimeSystemResult as RegimeSystemResult
+from ...engine._internals._substrates import _RegimeSwitchingLinearStateSpace
 from ...exceptions import DimensionError, NumericalError, SpecificationError
+from ...summary import (
+    InformationCriteria,
+    SummaryTable,
+)
 from ..structural.zero_restrictions import RecursiveSVAR
 
 __all__ = [
@@ -165,6 +167,7 @@ __all__ = [
     "MarkovSwitchingSVARResult",
     "MarkovSwitchingVAR",
     "MarkovSwitchingVARResult",
+    "RegimeSystemResult",
 ]
 
 
@@ -306,7 +309,7 @@ class MarkovSwitchingVARResult(_SummaryMixin, _ComparisonMixin):
     transition: npt.NDArray[np.float64] = field(repr=False)
     """The row-stochastic ``(M, M)`` transition matrix. Kept out of the repr."""
 
-    regimes: tuple[_RegimeSystemResult, ...] = field(repr=False)
+    regimes: tuple[RegimeSystemResult, ...] = field(repr=False)
     """One closed linear system per regime, in label order. Kept out of the repr."""
 
     filtered_prob: npt.NDArray[np.float64] = field(repr=False)
@@ -388,7 +391,7 @@ class MarkovSwitchingVARResult(_SummaryMixin, _ComparisonMixin):
             (199, True)
         """
         target = model.endog[model.order :]
-        views: list[_RegimeSystemResult] = []
+        views: list[RegimeSystemResult] = []
         for m in range(model.n_regimes):
             weight = fit.smoothed_prob[:, m]
             stack = fit.coefficients[m]
@@ -397,7 +400,7 @@ class MarkovSwitchingVARResult(_SummaryMixin, _ComparisonMixin):
             total = max(float(weight.sum()), 1e-12)
             scaled = resid_m * np.sqrt(weight * (target.shape[0] / total))[:, None]
             views.append(
-                _RegimeSystemResult(
+                RegimeSystemResult(
                     index=m,
                     names=model.names,
                     order=model.order,
@@ -523,7 +526,7 @@ class MarkovSwitchingVARResult(_SummaryMixin, _ComparisonMixin):
         )
         return f"MS{letters}({self.n_regimes})-VAR({self.order})"
 
-    def regime(self, index: int) -> _RegimeSystemResult:
+    def regime(self, index: int) -> RegimeSystemResult:
         """One regime's closed-system view, identity-stable across calls.
 
         Args:
@@ -531,7 +534,7 @@ class MarkovSwitchingVARResult(_SummaryMixin, _ComparisonMixin):
                 convention.
 
         Returns:
-            The :class:`_RegimeSystemResult`. The same object every call, so an
+            The :class:`RegimeSystemResult`. The same object every call, so an
             identification result built from it remembers its source by
             identity.
 
@@ -588,7 +591,7 @@ class MarkovSwitchingVARResult(_SummaryMixin, _ComparisonMixin):
             Traceback (most recent call last):
             cultivars.exceptions.SpecificationError: kind must be one of ('smoothed', ...
         """
-        validate_choice(kind, ProbabilityType, "kind")
+        _validate_choice(kind, ProbabilityType, "kind")
         return {
             "smoothed": self.smoothed_prob,
             "filtered": self.filtered_prob,
@@ -1833,7 +1836,7 @@ class MarkovSwitchingDFM:
             Traceback (most recent call last):
             cultivars.exceptions.DimensionError: a factor model needs at least 2 series; got 1.
         """
-        self._panel = validate_endog_matrix(panel)
+        self._panel = _validate_endog_matrix(panel)
         nobs, n_series = self._panel.shape
         if n_series < 2:
             raise DimensionError(f"a factor model needs at least 2 series; got {n_series}.")

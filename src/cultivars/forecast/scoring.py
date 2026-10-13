@@ -61,7 +61,7 @@ daylight; the summary averages for display and says so.
 Layout. :class:`DensityScore` scores one origin and returns a
 :class:`DensityScoreResult` with the per-cell arrays; :func:`pinball_loss`
 scores a quantile forecast elementwise. The numerics live in ``_core``:
-``crps_from_draws`` is the exact sample CRPS, ``energy_score`` the exact
+``_crps_from_draws`` is the exact sample CRPS, ``_energy_score`` the exact
 sample energy score by chunked pairwise norms, ``_kernel_log_score`` the
 Gaussian-kernel log density with Silverman's bandwidth, and
 ``_pinball_loss`` the check function. Across many origins the same
@@ -108,9 +108,15 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from .._core import SummaryTable, _kernel_log_score, _pinball_loss, crps_from_draws, energy_score
-from .._internals import _SummaryMixin
+from ..engine._core._scores import (
+    _crps_from_draws,
+    _energy_score,
+    _kernel_log_score,
+    _pinball_loss,
+)
+from ..engine._internals._mixins import _SummaryMixin
 from ..exceptions import DimensionError, NumericalError
+from ..summary import SummaryTable
 
 __all__ = ["DensityScore", "DensityScoreResult", "pinball_loss"]
 
@@ -504,9 +510,9 @@ class DensityScore:
         """
         draws, horizons, k = self._paths.shape
         flat = self._paths.reshape(draws, horizons * k)
-        crps = crps_from_draws(flat, self._realized.ravel()).reshape(horizons, k)
+        crps = _crps_from_draws(flat, self._realized.ravel()).reshape(horizons, k)
         energy = np.array(
-            [energy_score(self._paths[:, h, :], self._realized[h]) for h in range(horizons)]
+            [_energy_score(self._paths[:, h, :], self._realized[h]) for h in range(horizons)]
         )
         mean_error = self._paths.mean(axis=0) - self._realized
         median = np.median(self._paths, axis=0)

@@ -134,26 +134,32 @@ import numpy as np
 import numpy.typing as npt
 from scipy.stats import chi2
 
-from ..._core import (
-    _LOG_2PI,
-    _PARTIAL_IDENTIFICATION_NOTE,
-    _UNIT_SHOCK_NOTE,
-    ClosedSystemResult,
-    SummaryTable,
+from ...engine._core._defaults import _LOG_2PI
+from ...engine._core._matrices import (
     _long_run_matrix,
     _lower_cholesky,
+)
+from ...engine._core._notes import (
+    _PARTIAL_IDENTIFICATION_NOTE,
+    _UNIT_SHOCK_NOTE,
+)
+from ...engine._core._protocols import ClosedSystemResult
+from ...engine._core._validators import (
     _validate_impact_pattern,
     _validate_ordering,
 )
-from ..._internals import (
-    _IdentificationModel,
-    _maximize_likelihood,
+from ...engine._internals._mixins import _SummaryMixin
+from ...engine._internals._models import _IdentificationModel
+from ...engine._internals._objectives import (
     _MixedHorizonObjective,
     _ShortRunObjective,
+)
+from ...engine._internals._solvers import (
+    _maximize_likelihood,
     _solve,
-    _SummaryMixin,
 )
 from ...exceptions import NumericalError, SpecificationError
+from ...summary import SummaryTable
 
 __all__ = ["LongRunSVAR", "MixedSVAR", "RecursiveSVAR", "SVARResult", "ShortRunSVAR"]
 
@@ -327,7 +333,7 @@ class RecursiveSVAR(_IdentificationModel[SVARResult]):
 
     Example:
         >>> rng = np.random.default_rng(0)
-        >>> from cultivars.multivariate.reduced_form import VAR
+        >>> from cultivars.multivariate.reduced_form.vector_autoregression import VAR
         >>> y = np.diff(rng.standard_normal((121, 2)).cumsum(axis=0) * 0.1, axis=0)
         >>> svar = RecursiveSVAR(VAR(y, order=1).fit()).identify()
         >>> svar.impact.shape

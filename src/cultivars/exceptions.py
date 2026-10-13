@@ -87,6 +87,7 @@ from __future__ import annotations
 __all__ = [
     "CultivarsError",
     "DimensionError",
+    "ExperimentalWarning",
     "NumericalError",
     "SpecificationError",
     "StabilityWarning",
@@ -257,4 +258,23 @@ class StabilityWarning(UserWarning):
         ...     warnings.warn("something else", UserWarning)
         >>> [w.category.__name__ for w in caught]
         ['UserWarning']
+    """
+
+
+class ExperimentalWarning(UserWarning):
+    """Raised once when :mod:`cultivars.experimental` is imported.
+
+    The experimental subpackage holds models from recent papers under a
+    looser contract than the rest of the package: a name there may change
+    or be removed in any minor release. The warning is a ``UserWarning``
+    so that it is shown by default, and its own class so that it can be
+    silenced precisely once the terms are accepted.
+
+    Example:
+        >>> import warnings
+        >>> with warnings.catch_warnings(record=True) as caught:
+        ...     warnings.simplefilter("always")
+        ...     warnings.warn("unstable", ExperimentalWarning)
+        >>> caught[0].category.__name__
+        'ExperimentalWarning'
     """

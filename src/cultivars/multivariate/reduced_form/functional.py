@@ -128,17 +128,21 @@ import numpy as np
 import numpy.typing as npt
 from scipy.interpolate import BSpline
 
-from ..._core import (
-    FunctionalBasis,
-    SummaryTable,
-    Trend,
+from ...engine._core._polynomials import (
     _nelson_siegel_loadings,
     _projection_scores,
-    _validate_curves,
-    validate_choice,
 )
-from ..._internals import _SummaryMixin
+from ...engine._core._types import (
+    FunctionalBasis,
+    Trend,
+)
+from ...engine._core._validators import (
+    _validate_choice,
+    _validate_curves,
+)
+from ...engine._internals._mixins import _SummaryMixin
 from ...exceptions import DimensionError, NumericalError, SpecificationError
+from ...summary import SummaryTable
 from .vector_autoregression import VAR, VARResult
 
 __all__ = ["FunctionalVAR", "FunctionalVARResult"]
@@ -676,9 +680,9 @@ class FunctionalVAR:
             raise NumericalError("grid must be finite.")
         if np.any(np.diff(self._grid) <= 0):
             raise SpecificationError("grid must be strictly increasing.")
-        self._basis: str = validate_choice(basis, FunctionalBasis, "basis")
+        self._basis: str = _validate_choice(basis, FunctionalBasis, "basis")
         self._order = int(order)
-        self._trend: Trend = validate_choice(trend, Trend, "trend")
+        self._trend: Trend = _validate_choice(trend, Trend, "trend")
 
         if n_components is not None and (int(n_components) != n_components or n_components < 1):
             raise SpecificationError(f"n_components must be an integer >= 1; got {n_components!r}.")

@@ -125,7 +125,7 @@ Example:
 
     >>> import numpy as np
     >>> from cultivars.univariate.autoregression import AR
-    >>> from cultivars._internals._engines import NumpyMLPEngine
+    >>> from cultivars.engine._internals._engines import NumpyMLPEngine
     >>> rng = np.random.default_rng(0)
     >>> y = np.zeros(600)
     >>> for t in range(1, 600):
@@ -149,19 +149,23 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
-from .._core import SummaryTable, trailing_lag
-from .._internals import (
-    MeanPredictor,
-    _MeanFunctionResult,
+from ..engine._core._matrices import _trailing_lag
+from ..engine._internals._engines import MeanFunctionEngine
+from ..engine._internals._fits import (
     _NeuralAutoRegressionFit,
-    _NeuralAutoRegressionModel,
     _NeuralThresholdFit,
+)
+from ..engine._internals._models import (
+    _NeuralAutoRegressionModel,
     _NeuralThresholdModel,
 )
+from ..engine._internals._predictors import MeanPredictor
+from ..engine._internals._results import _MeanFunctionResult
 from ..exceptions import DimensionError, SpecificationError
 from ..state_space.nonlinear import NonlinearSSM
+from ..summary import SummaryTable
 
-__all__ = ["ARNN", "TARNN", "ARNNResult", "TARNNResult"]
+__all__ = ["ARNN", "TARNN", "ARNNResult", "MeanFunctionEngine", "TARNNResult"]
 
 
 @dataclass(frozen=True, kw_only=True, slots=True, repr=False)
@@ -203,7 +207,7 @@ class ARNNResult(_MeanFunctionResult):
         A one-lag map :math:`0.8 \tanh(2 y_{t-1})` recovered on a grid:
 
         >>> import numpy as np
-        >>> from cultivars._core import lag_matrix
+        >>> from cultivars.engine._core._matrices import _lag_matrix
         >>> rng = np.random.default_rng(0)
         >>> y = np.zeros(500)
         >>> for t in range(1, 500):
@@ -211,7 +215,7 @@ class ARNNResult(_MeanFunctionResult):
         >>> res = ARNN(y, order=1).fit()
         >>> res.nobs, res.n_learner_parameters, res.engine
         (499, 25, 'NumpyMLPEngine')
-        >>> bool(np.allclose(res.predict(lag_matrix(y, 1)), res.fittedvalues))
+        >>> bool(np.allclose(res.predict(_lag_matrix(y, 1)), res.fittedvalues))
         True
         >>> grid = np.array([[-1.0], [0.0], [1.0]])
         >>> bool(np.max(np.abs(res.predict(grid) - 0.8 * np.tanh(2.0 * grid[:, 0]))) < 0.15)
@@ -538,7 +542,7 @@ class TARNNResult(_MeanFunctionResult):
             engine_config=repr(model.engine),
             delay=fit.delay,
             threshold=fit.threshold,
-            threshold_values=trailing_lag(
+            threshold_values=_trailing_lag(
                 model.endog if external is None else external,
                 delay=fit.delay,
                 length=fit.nobs,
@@ -648,14 +652,14 @@ class TARNNResult(_MeanFunctionResult):
             stored threshold variable:
 
             >>> import numpy as np
-            >>> from cultivars._core import lag_matrix
+            >>> from cultivars.engine._core._matrices import _lag_matrix
             >>> rng = np.random.default_rng(0)
             >>> y = rng.standard_normal(300)
             >>> res = TARNN(y, order=1).fit()
-            >>> means = res.predict(lag_matrix(y, 1), res.threshold_values)
+            >>> means = res.predict(_lag_matrix(y, 1), res.threshold_values)
             >>> bool(np.allclose(means, res.fittedvalues))
             True
-            >>> res.predict(lag_matrix(y, 1), res.threshold_values[:5])
+            >>> res.predict(_lag_matrix(y, 1), res.threshold_values[:5])
             Traceback (most recent call last):
                 ...
             cultivars.exceptions.DimensionError: threshold_values must have shape (299,); got (5,).

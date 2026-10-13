@@ -152,9 +152,15 @@ import numpy as np
 import numpy.typing as npt
 from scipy.stats import chi2
 
-from ..._core import SummaryTable, validate_weights
-from ..._internals import _SummaryMixin, _VectorPropagationMixin, _WaldTest, solve_global
+from ...engine._core._validators import _validate_weights
+from ...engine._internals._mixins import (
+    _SummaryMixin,
+    _VectorPropagationMixin,
+)
+from ...engine._internals._solvers import _solve_global
+from ...engine._internals._tests import _WaldTest
 from ...exceptions import SpecificationError
+from ...summary import SummaryTable
 from .error_correction import VECMXResult
 from .vector_autoregression import VARXResult
 
@@ -928,7 +934,7 @@ class GVAR:
                 f"got {len(labels)}."
             )
         self._labels = labels
-        self._weights = validate_weights(weights, n_units=len(self._units))
+        self._weights = _validate_weights(weights, n_units=len(self._units))
         if unit_names is None:
             self._unit_names = tuple(f"unit{i + 1}" for i in range(len(self._units)))
         else:
@@ -1065,7 +1071,7 @@ class GVAR:
             True
         """
         levels = tuple(unit.to_varx() for unit in self._units)
-        linkage, blocks, drift = solve_global(
+        linkage, blocks, drift = _solve_global(
             levels,
             weights=self._weights,
             unit_of_column=self.unit_of_column,

@@ -99,7 +99,7 @@ Example:
     on data where the decay is constant:
 
     >>> import numpy as np
-    >>> from cultivars._core import _nelson_siegel_loadings
+    >>> from cultivars.engine._core._polynomials import _nelson_siegel_loadings
     >>> rng = np.random.default_rng(0)
     >>> taus = np.array([0.25, 0.5, 1.0, 2.0, 3.0, 5.0, 7.0, 10.0])
     >>> mu = np.array([5.0, -1.5, 1.0])
@@ -126,22 +126,27 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import SummaryTable, _nelson_siegel_loadings
-from ..._internals import (
-    _ComparisonMixin,
-    _decay_nelson_siegel_state_space,
+from ...engine._core._polynomials import _nelson_siegel_loadings
+from ...engine._internals._emitters import _decay_nelson_siegel_state_space
+from ...engine._internals._fits import (
     _DecayNelsonSiegelFit,
-    _DecayNelsonSiegelModel,
-    _DecayNelsonSiegelParameters,
-    _maximize_likelihood,
     _NelsonSiegelFit,
-    _NelsonSiegelObjective,
-    _NelsonSiegelParameters,
+)
+from ...engine._internals._mixins import (
+    _ComparisonMixin,
     _SummaryMixin,
 )
+from ...engine._internals._models import _DecayNelsonSiegelModel
+from ...engine._internals._objectives import _NelsonSiegelObjective
+from ...engine._internals._parameters import (
+    _DecayNelsonSiegelParameters,
+    _NelsonSiegelParameters,
+)
+from ...engine._internals._solvers import _maximize_likelihood
 from ...exceptions import DimensionError, NumericalError, SpecificationError
 from ...state_space.linear_gaussian import LinearGaussianSSM
 from ...state_space.nonlinear import NonlinearSSM
+from ...summary import SummaryTable
 
 __all__ = [
     "DynamicNelsonSiegel",
@@ -233,7 +238,7 @@ class DynamicNelsonSiegelResult(_SummaryMixin, _ComparisonMixin):
         standard errors that grow with the horizon:
 
         >>> import numpy as np
-        >>> from cultivars._core import _nelson_siegel_loadings
+        >>> from cultivars.engine._core._polynomials import _nelson_siegel_loadings
         >>> rng = np.random.default_rng(0)
         >>> taus = np.array([0.5, 2.0, 5.0, 10.0])
         >>> basis = _nelson_siegel_loadings(taus, 0.6)
@@ -435,7 +440,7 @@ class DynamicNelsonSiegelResult(_SummaryMixin, _ComparisonMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars._core import _nelson_siegel_loadings
+            >>> from cultivars.engine._core._polynomials import _nelson_siegel_loadings
             >>> rng = np.random.default_rng(0)
             >>> taus = np.array([0.5, 2.0, 5.0, 10.0])
             >>> basis = _nelson_siegel_loadings(taus, 0.6)
@@ -551,7 +556,7 @@ class DynamicNelsonSiegelResult(_SummaryMixin, _ComparisonMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars._core import _nelson_siegel_loadings
+            >>> from cultivars.engine._core._polynomials import _nelson_siegel_loadings
             >>> rng = np.random.default_rng(0)
             >>> taus = np.array([0.5, 2.0, 5.0, 10.0])
             >>> basis = _nelson_siegel_loadings(taus, 0.6)
@@ -724,7 +729,7 @@ class DynamicNelsonSiegel:
 
     Example:
         >>> import numpy as np
-        >>> from cultivars._core import _nelson_siegel_loadings
+        >>> from cultivars.engine._core._polynomials import _nelson_siegel_loadings
         >>> rng = np.random.default_rng(0)
         >>> taus = np.array([0.25, 1.0, 2.0, 5.0, 10.0])
         >>> basis = _nelson_siegel_loadings(taus, 0.6)
@@ -838,7 +843,7 @@ class DynamicNelsonSiegel:
             recovered near the truth and costs one:
 
             >>> import numpy as np
-            >>> from cultivars._core import _nelson_siegel_loadings
+            >>> from cultivars.engine._core._polynomials import _nelson_siegel_loadings
             >>> rng = np.random.default_rng(0)
             >>> taus = np.array([0.5, 2.0, 5.0, 10.0])
             >>> basis = _nelson_siegel_loadings(taus, 0.6)
@@ -968,7 +973,7 @@ class TimeVaryingNelsonSiegelResult(_SummaryMixin, _ComparisonMixin):
         to move the fitted hump with it:
 
         >>> import numpy as np
-        >>> from cultivars._core import _nelson_siegel_loadings
+        >>> from cultivars.engine._core._polynomials import _nelson_siegel_loadings
         >>> rng = np.random.default_rng(0)
         >>> taus = np.array([0.25, 0.5, 1.0, 2.0, 3.0, 5.0, 7.0, 10.0])
         >>> mu, bar = np.array([5.0, -1.5, 1.0]), np.log(0.6)
@@ -1467,7 +1472,7 @@ class TimeVaryingNelsonSiegel(_DecayNelsonSiegelModel[TimeVaryingNelsonSiegelRes
 
     Example:
         >>> import numpy as np
-        >>> from cultivars._core import _nelson_siegel_loadings
+        >>> from cultivars.engine._core._polynomials import _nelson_siegel_loadings
         >>> rng = np.random.default_rng(0)
         >>> taus = np.array([0.25, 1.0, 2.0, 5.0, 10.0])
         >>> f = np.zeros((120, 3))
@@ -1503,7 +1508,7 @@ class TimeVaryingNelsonSiegel(_DecayNelsonSiegelModel[TimeVaryingNelsonSiegelRes
             one, and the parameter count is the same under both:
 
             >>> import numpy as np
-            >>> from cultivars._core import _nelson_siegel_loadings
+            >>> from cultivars.engine._core._polynomials import _nelson_siegel_loadings
             >>> rng = np.random.default_rng(0)
             >>> taus = np.array([0.25, 0.5, 1.0, 2.0, 3.0, 5.0, 7.0, 10.0])
             >>> mu, bar = np.array([5.0, -1.5, 1.0]), np.log(0.6)

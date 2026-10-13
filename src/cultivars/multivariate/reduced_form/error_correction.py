@@ -146,31 +146,35 @@ from typing import Self, cast
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import (
-    _CHOLESKY_NOTE,
-    _CONDITIONAL_REFUSAL,
+from ...engine._core._mappings import (
     _LEVELS_TREND,
     _UNRESTRICTED_TREND,
-    _UNSTABLE_NOTE,
-    CointegrationTrend,
-    SummaryTable,
-    deterministic_columns,
-    validate_exog_matrix,
 )
-from ..._internals import (
+from ...engine._core._matrices import _deterministic_columns
+from ...engine._core._notes import (
+    _CHOLESKY_NOTE,
+    _CONDITIONAL_REFUSAL,
+    _UNSTABLE_NOTE,
+)
+from ...engine._core._types import CointegrationTrend
+from ...engine._core._validators import _validate_exog_matrix
+from ...engine._internals._assessments import _StabilityAssessment
+from ...engine._internals._fits import _VectorErrorCorrectionFit
+from ...engine._internals._levels import _ConditionalLevels
+from ...engine._internals._mixins import (
     _ComparisonMixin,
-    _ConditionalLevels,
-    _ErrorCorrectionResult,
-    _ExogenousVectorErrorCorrectionModel,
-    _StabilityAssessment,
     _SummaryMixin,
-    _VectorErrorCorrectionFit,
-    _VectorErrorCorrectionModel,
     _VectorInferenceMixin,
     _VectorPropagationMixin,
-    _WaldTest,
 )
+from ...engine._internals._models import (
+    _ExogenousVectorErrorCorrectionModel,
+    _VectorErrorCorrectionModel,
+)
+from ...engine._internals._results import _ErrorCorrectionResult
+from ...engine._internals._tests import _WaldTest
 from ...exceptions import DimensionError, SpecificationError
+from ...summary import SummaryTable
 
 __all__ = ["VECM", "VECMX", "VECMResult", "VECMXResult"]
 
@@ -715,7 +719,7 @@ class VECMResult(
             raise SpecificationError(f"steps must be at least 1; got {steps}.")
         k, p = self.k_endog, self.order
         total = self.endog.shape[0]
-        det = deterministic_columns(self.trend, steps, start=total + 1)
+        det = _deterministic_columns(self.trend, steps, start=total + 1)
         blocks = self.coefficients
         history = [self.endog[total - i - 1] for i in range(p)]
         out = np.empty((steps, k), dtype=np.float64)
@@ -1623,7 +1627,7 @@ class VECMXResult(VECMResult):
                 f"{self.k_exog} columns for {self.exog_names}. This model holds no process "
                 "for x and will not invent one."
             )
-        future = validate_exog_matrix(exog_future, nobs=steps, label="exog_future")
+        future = _validate_exog_matrix(exog_future, nobs=steps, label="exog_future")
         if future.shape[1] != self.k_exog:
             raise DimensionError(
                 f"exog_future has {future.shape[1]} columns but the model was fitted with "
@@ -1631,7 +1635,7 @@ class VECMXResult(VECMResult):
             )
         k, p = self.k_endog, self.order
         total = self.endog.shape[0]
-        det = deterministic_columns(
+        det = _deterministic_columns(
             _UNRESTRICTED_TREND[cast(CointegrationTrend, self.cointegration_trend)],
             steps,
             start=total + 1,

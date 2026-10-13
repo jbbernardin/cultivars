@@ -136,12 +136,12 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import Regime, SummaryTable, validate_choice
-from ..._internals import (
-    _ThresholdVectorAutoRegressionModel,
-    _VectorObservedRegimeResult,
-    _VectorThresholdFit,
-)
+from ...engine._core._types import Regime
+from ...engine._core._validators import _validate_choice
+from ...engine._internals._fits import _VectorThresholdFit
+from ...engine._internals._models import _ThresholdVectorAutoRegressionModel
+from ...engine._internals._results import _VectorObservedRegimeResult
+from ...summary import SummaryTable
 
 __all__ = ["TVAR", "TVARResult"]
 
@@ -366,7 +366,7 @@ class TVARResult(_VectorObservedRegimeResult):
             Traceback (most recent call last):
             cultivars.exceptions.SpecificationError: regime must be one of ('lower', 'upper'); ...
         """
-        choice = validate_choice(regime, Regime, "regime")
+        choice = _validate_choice(regime, Regime, "regime")
         return self.lower_sigma_u if choice == "lower" else self.upper_sigma_u
 
     def _comparison_label(self) -> str:

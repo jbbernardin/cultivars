@@ -149,24 +149,24 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
-from .._core import (
-    _SIMULATION_BURN,
-    InformationCriteria,
-    ProbabilityType,
-    SummaryTable,
-    validate_choice,
-)
-from .._internals import (
+from ..engine._core._defaults import _SIMULATION_BURN
+from ..engine._core._types import ProbabilityType
+from ..engine._core._validators import _validate_choice
+from ..engine._internals._assessments import _StabilityAssessment
+from ..engine._internals._fits import _MarkovSwitchingFit
+from ..engine._internals._mixins import (
     _ComparisonMixin,
-    _MarkovSwitchingFit,
-    _MarkovSwitchingModel,
-    _MarkovSwitchingStateSpace,
     _SeriesMixin,
-    _simulate_markov_switching,
-    _StabilityAssessment,
     _SummaryMixin,
 )
+from ..engine._internals._models import _MarkovSwitchingModel
+from ..engine._internals._simulators import _simulate_markov_switching
+from ..engine._internals._substrates import _MarkovSwitchingStateSpace
 from ..exceptions import SpecificationError
+from ..summary import (
+    InformationCriteria,
+    SummaryTable,
+)
 
 __all__ = ["MarkovSwitchingAR", "MarkovSwitchingARResult"]
 
@@ -467,7 +467,7 @@ class MarkovSwitchingARResult(_SummaryMixin, _SeriesMixin, _ComparisonMixin):
                 ...
             cultivars.exceptions.SpecificationError: kind must be one of ('smoothed', ...
         """
-        validate_choice(kind, ProbabilityType, "kind")
+        _validate_choice(kind, ProbabilityType, "kind")
         return {
             "smoothed": self.smoothed_prob,
             "filtered": self.filtered_prob,

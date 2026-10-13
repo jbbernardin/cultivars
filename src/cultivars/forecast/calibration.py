@@ -68,7 +68,7 @@ Layout. :class:`Calibration` is the producer and
 series, one Berkowitz
 :class:`~cultivars.diagnostics.hypothesis.LikelihoodRatioTest` per
 series, and the :meth:`~CalibrationResult.histogram` that draws the
-picture. The numerics live in ``_core``: ``pit_from_draws`` evaluates
+picture. The numerics live in ``_core``: ``_pit_from_draws`` evaluates
 the predictive sample's empirical distribution function at the outcome
 with the half-count tie convention and a half-draw clip away from the
 endpoints, and ``_berkowitz_likelihood_ratio`` fits the AR(1) by
@@ -121,9 +121,12 @@ import numpy as np
 import numpy.typing as npt
 import scipy.stats as sst
 
-from .._core import SummaryTable, _berkowitz_likelihood_ratio, pit_from_draws
-from .._internals import _LikelihoodRatioTest, _SummaryMixin
+from ..engine._core._estimators import _berkowitz_likelihood_ratio
+from ..engine._core._scores import _pit_from_draws
+from ..engine._internals._mixins import _SummaryMixin
+from ..engine._internals._tests import _LikelihoodRatioTest
 from ..exceptions import DimensionError, NumericalError, SpecificationError
+from ..summary import SummaryTable
 
 __all__ = ["Calibration", "CalibrationResult"]
 
@@ -563,7 +566,7 @@ class Calibration:
 
         Origin by origin, the outcome is passed through the empirical
         distribution function of its predictive sample
-        (``pit_from_draws``, with the half-count tie convention and the
+        (``_pit_from_draws``, with the half-count tie convention and the
         half-draw clip); the whole ``(T, k)`` series is then mapped to
         normal quantiles and each column handed to
         ``_berkowitz_likelihood_ratio``, which returns the statistic, its
@@ -587,7 +590,7 @@ class Calibration:
         origins, _, k = self._paths.shape
         pit = np.empty((origins, k))
         for origin in range(origins):
-            pit[origin] = pit_from_draws(self._paths[origin], self._realized[origin])
+            pit[origin] = _pit_from_draws(self._paths[origin], self._realized[origin])
         transformed = np.asarray(sst.norm.ppf(pit), dtype=np.float64)
         tests = tuple(
             _LikelihoodRatioTest(statistic=stat, df=df, pvalue=p)

@@ -110,20 +110,24 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from .._core import (
-    _TURNING_POINT_RULES,
-    SummaryTable,
+from ..engine._core._estimators import (
     _alternate_turns,
     _candidate_turns,
-    _concordance,
     _enforce_durations,
-    _phase_statistics,
-    _validate_chronology,
-    validate_endog,
-    validate_order,
 )
-from .._internals import _SummaryMixin
+from ..engine._core._mappings import _TURNING_POINT_RULES
+from ..engine._core._scores import (
+    _concordance,
+    _phase_statistics,
+)
+from ..engine._core._validators import (
+    _validate_chronology,
+    _validate_endog,
+    _validate_order,
+)
+from ..engine._internals._mixins import _SummaryMixin
 from ..exceptions import DimensionError, SpecificationError
+from ..summary import SummaryTable
 
 __all__ = ["TurningPoints", "TurningPointsResult", "concordance"]
 
@@ -490,13 +494,13 @@ class TurningPoints:
                 f"convention must be one of {tuple(_TURNING_POINT_RULES)}; got {convention!r}."
             )
         base_window, base_phase, base_cycle = _TURNING_POINT_RULES[convention]
-        self._window = validate_order(
+        self._window = _validate_order(
             base_window if window is None else window, "window", minimum=1
         )
-        self._min_phase = validate_order(
+        self._min_phase = _validate_order(
             base_phase if min_phase is None else min_phase, "min_phase", minimum=1
         )
-        self._min_cycle = validate_order(
+        self._min_cycle = _validate_order(
             base_cycle if min_cycle is None else min_cycle, "min_cycle", minimum=2
         )
 
@@ -537,7 +541,7 @@ class TurningPoints:
                 ...
             cultivars.exceptions.SpecificationError: a series of 8 observations is too short ...
         """
-        y = validate_endog(endog)
+        y = _validate_endog(endog)
         n = y.shape[0]
         if n < 2 * self._window + self._min_cycle:
             raise SpecificationError(

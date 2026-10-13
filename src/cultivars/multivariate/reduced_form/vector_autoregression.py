@@ -122,28 +122,34 @@ from typing import Self
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import (
+from ...engine._core._matrices import _deterministic_columns
+from ...engine._core._notes import (
     _CHOLESKY_NOTE,
     _UNSTABLE_NOTE,
-    SummaryTable,
-    deterministic_columns,
-    validate_exog_matrix,
 )
-from ..._internals import (
-    _ComparisonMixin,
-    _ConditionalLevels,
+from ...engine._core._validators import _validate_exog_matrix
+from ...engine._internals._fits import (
     _ExogenousVectorAutoRegressionFit,
-    _ExogenousVectorAutoRegressionModel,
-    _SummaryMixin,
     _VectorAutoRegressionFit,
-    _VectorAutoRegressionModel,
+)
+from ...engine._internals._inferences import _CoefficientInference as CoefficientInference
+from ...engine._internals._levels import _ConditionalLevels
+from ...engine._internals._levels import _ConditionalLevels as ConditionalLevels
+from ...engine._internals._mixins import (
+    _ComparisonMixin,
+    _SummaryMixin,
     _VectorInferenceMixin,
     _VectorPropagationMixin,
-    _VectorResult,
 )
+from ...engine._internals._models import (
+    _ExogenousVectorAutoRegressionModel,
+    _VectorAutoRegressionModel,
+)
+from ...engine._internals._results import _VectorResult
 from ...exceptions import DimensionError, SpecificationError
+from ...summary import SummaryTable
 
-__all__ = ["VAR", "VARX", "VARResult", "VARXResult"]
+__all__ = ["VAR", "VARX", "CoefficientInference", "ConditionalLevels", "VARResult", "VARXResult"]
 
 
 @dataclass(frozen=True, kw_only=True, slots=True, repr=False)
@@ -748,7 +754,7 @@ class VARXResult(
                 "process for x and will not invent one, because doing so would turn a "
                 "conditional forecast into an unconditional forecast without saying so."
             )
-        future = validate_exog_matrix(exog_future, nobs=steps, label="exog_future")
+        future = _validate_exog_matrix(exog_future, nobs=steps, label="exog_future")
         if future.shape[1] != self.k_exog:
             raise DimensionError(
                 f"exog_future has {future.shape[1]} columns but the model was fitted with "
@@ -756,7 +762,7 @@ class VARXResult(
             )
         k, p, s = self.k_endog, self.order, self.exog_order
         nobs = self.endog.shape[0]
-        det = deterministic_columns(self.trend, steps, start=nobs + 1)
+        det = _deterministic_columns(self.trend, steps, start=nobs + 1)
         history = [self.endog[nobs - i - 1] for i in range(p)]
         path = np.vstack([self.exog[nobs - s :], future]) if s else future
         out = np.empty((steps, k), dtype=np.float64)

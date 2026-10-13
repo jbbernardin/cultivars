@@ -69,7 +69,7 @@ Layout. :class:`SpectralCausality` produces a
 pair with ``pair``, ``band``, and ``integrated`` readings;
 :class:`ConditionalSpectralCausality` produces a
 :class:`ConditionalSpectralCausalityResult`, one cause against every
-effect. The numerics live in ``_core``: ``frequency_grid`` lays out
+effect. The numerics live in ``_core``: ``_frequency_grid`` lays out
 ``[0, pi]``, ``transfer_function`` evaluates :math:`\Psi(\omega)` from
 a lag stack, ``spectral_matrix`` forms :math:`\Psi \Sigma \Psi^\ast /
 2\pi`, ``_pairwise_measure`` computes the bivariate measure from an
@@ -130,16 +130,17 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from .._core import (
-    ClosedSystemResult,
-    SummaryTable,
+from ..engine._core._protocols import ClosedSystemResult
+from ..engine._core._spectra import (
+    _frequency_grid,
     _pairwise_measure,
-    frequency_grid,
-    spectral_matrix,
-    transfer_function,
+    _spectral_matrix,
+    _transfer_function,
 )
-from .._internals import _spectral_factor, _SummaryMixin
+from ..engine._internals._mixins import _SummaryMixin
+from ..engine._internals._solvers import _spectral_factor
 from ..exceptions import SpecificationError
+from ..summary import SummaryTable
 
 __all__ = [
     "ConditionalSpectralCausality",
@@ -633,9 +634,9 @@ class SpectralCausality:
         circle = np.concatenate([half, np.pi + half])
         coefficients = np.asarray(result.coefficients)
         sigma_u = np.asarray(result.sigma_u)
-        transfer = transfer_function(coefficients, circle)
+        transfer = _transfer_function(coefficients, circle)
         measure = np.zeros((n, k, k))
-        grid = frequency_grid(n)
+        grid = _frequency_grid(n)
         if k == 2:
             forward = _pairwise_measure(transfer, sigma_u)
             swap = transfer[:, ::-1][:, :, ::-1]
@@ -645,7 +646,7 @@ class SpectralCausality:
             return SpectralCausalityResult(
                 names=tuple(result.names), frequencies=grid, measure=measure
             )
-        density = spectral_matrix(transfer, sigma_u)
+        density = _spectral_matrix(transfer, sigma_u)
         for i in range(k):
             for j in range(i + 1, k):
                 select = np.array([i, j])
@@ -1095,9 +1096,9 @@ class ConditionalSpectralCausality:
         result, restricted = self._result, self._restricted
         k, cause = result.k_endog, self._cause_index
         others = [index for index in range(k) if index != cause]
-        grid = frequency_grid(self._n_frequencies)
+        grid = _frequency_grid(self._n_frequencies)
         n = grid.shape[0]
-        full_transfer = transfer_function(np.asarray(result.coefficients), grid)
+        full_transfer = _transfer_function(np.asarray(result.coefficients), grid)
         sigma_full = np.asarray(result.sigma_u)
         stack = np.asarray(restricted.coefficients)
         polynomial = np.tile(np.eye(k - 1, dtype=np.complex128), (n, 1, 1))

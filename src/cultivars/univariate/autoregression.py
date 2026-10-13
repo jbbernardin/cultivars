@@ -121,17 +121,21 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
-from .._core import _SIMULATION_BURN, InformationCriteria, SummaryTable
-from .._internals import (
-    _AutoRegressionFit,
-    _AutoRegressionModel,
+from ..engine._core._defaults import _SIMULATION_BURN
+from ..engine._internals._fits import _AutoRegressionFit
+from ..engine._internals._mixins import (
     _ComparisonMixin,
     _SeriesMixin,
-    _simulate_arma,
     _StationarityMixin,
     _SummaryMixin,
 )
+from ..engine._internals._models import _AutoRegressionModel
+from ..engine._internals._simulators import _simulate_arma
 from ..exceptions import SpecificationError
+from ..summary import (
+    InformationCriteria,
+    SummaryTable,
+)
 
 __all__ = ["AR", "ARResult"]
 

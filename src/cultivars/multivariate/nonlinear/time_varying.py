@@ -147,13 +147,14 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import SummaryTable, companion_matrix
-from ..._internals import (
+from ...engine._core._matrices import _companion_matrix
+from ...engine._internals._mixins import (
     _ConvergenceMixin,
     _SummaryMixin,
-    _TimeVaryingVectorAutoRegressionModel,
 )
+from ...engine._internals._models import _TimeVaryingVectorAutoRegressionModel
 from ...exceptions import SpecificationError
+from ...summary import SummaryTable
 
 __all__ = [
     "TVPSVAR",
@@ -229,7 +230,7 @@ class TVPVARResult(_SummaryMixin, _ConvergenceMixin):
         * :class:`TVPVAR` -- the model that produces this record.
         * :class:`TVPVARSVResult` -- the same paths with drifting
           volatility.
-        * :class:`TimeVaryingSVAR` -- the recursive structural reading of
+        * :class:`TVPSVAR` -- the recursive structural reading of
           either.
         * :class:`~cultivars.multivariate.large_dim.bayesian.BVARResult` --
           the constant-coefficient posterior these paths relax.
@@ -485,7 +486,7 @@ class TVPVARResult(_SummaryMixin, _ConvergenceMixin):
         """
         out = np.empty(self.nobs)
         for t in range(self.nobs):
-            eigs = np.linalg.eigvals(companion_matrix(self.coefficients_at(t)))
+            eigs = np.linalg.eigvals(_companion_matrix(self.coefficients_at(t)))
             out[t] = float(np.abs(eigs).max(initial=0.0))
         return out
 
@@ -607,7 +608,7 @@ class TVPVARSVResult(TVPVARResult):
         *end-of-sample* covariance :math:`\Sigma_T`; the full path is in
         ``h_draws`` and ``impact_draws``. Because :math:`A` is triangular
         in the order of ``names``, the recursive identification is fixed
-        when the model is fitted: :class:`TimeVaryingSVAR` refuses a
+        when the model is fitted: :class:`TVPSVAR` refuses a
         different ordering on this result.
 
     Attributes:
@@ -746,7 +747,7 @@ class TVPSVARResult(_SummaryMixin, _ConvergenceMixin):
             constant rows repeated for the homoskedastic model.
 
     See Also:
-        * :class:`TimeVaryingSVAR` -- the declaration that produces this
+        * :class:`TVPSVAR` -- the declaration that produces this
           record.
         * :class:`TVPVARResult` -- the homoskedastic source.
         * :class:`TVPVARSVResult` -- the stochastic-volatility source.
@@ -763,7 +764,7 @@ class TVPSVARResult(_SummaryMixin, _ConvergenceMixin):
         >>> for t in range(1, 140):
         ...     y[t] = 0.5 * y[t - 1] + rng.standard_normal(2)
         >>> source = TVPVAR(y, order=1, training=40).fit(n_draws=40, n_burn=15, seed=0)
-        >>> svar = TimeVaryingSVAR(source).identify()
+        >>> svar = TVPSVAR(source).identify()
         >>> svar.names, svar.nobs, svar.impacts.shape
         (('y1', 'y2'), 99, (99, 2, 2))
         >>> bool(np.allclose(svar.impact(0), np.linalg.cholesky(source.sigma_u)))
@@ -789,7 +790,7 @@ class TVPSVARResult(_SummaryMixin, _ConvergenceMixin):
             >>> source = TVPVAR(y, order=1, training=30, names=("r", "pi")).fit(
             ...     n_draws=12, n_burn=4, seed=0
             ... )
-            >>> TimeVaryingSVAR(source).identify().names
+            >>> TVPSVAR(source).identify().names
             ('r', 'pi')
         """
         return self.source.names
@@ -802,7 +803,7 @@ class TVPSVARResult(_SummaryMixin, _ConvergenceMixin):
             >>> import numpy as np
             >>> y = np.random.default_rng(0).standard_normal((120, 2))
             >>> source = TVPVAR(y, order=1, training=30).fit(n_draws=12, n_burn=4, seed=0)
-            >>> svar = TimeVaryingSVAR(source).identify()
+            >>> svar = TVPSVAR(source).identify()
             >>> svar.nobs == source.nobs == svar.impacts.shape[0]
             True
         """
@@ -830,7 +831,7 @@ class TVPSVARResult(_SummaryMixin, _ConvergenceMixin):
             >>> for t in range(1, 140):
             ...     y[t] = 0.5 * y[t - 1] + rng.standard_normal(2)
             >>> source = TVPVARSV(y, order=1, training=40).fit(n_draws=40, n_burn=15, seed=0)
-            >>> svar = TimeVaryingSVAR(source).identify()
+            >>> svar = TVPSVAR(source).identify()
             >>> first, last = svar.impact(0), svar.impact(98)
             >>> bool(np.allclose(first, np.tril(first))), bool(np.any(first != last))
             (True, True)
@@ -875,7 +876,7 @@ class TVPSVARResult(_SummaryMixin, _ConvergenceMixin):
             >>> for t in range(1, 140):
             ...     y[t] = 0.5 * y[t - 1] + rng.standard_normal(2)
             >>> source = TVPVAR(y, order=1, training=40).fit(n_draws=40, n_burn=15, seed=0)
-            >>> svar = TimeVaryingSVAR(source).identify()
+            >>> svar = TVPSVAR(source).identify()
             >>> response = svar.irf(4, t=50)
             >>> response.shape, bool(np.allclose(response[0], svar.impact(50)))
             ((5, 2, 2), True)
@@ -900,7 +901,7 @@ class TVPSVARResult(_SummaryMixin, _ConvergenceMixin):
             selector = np.zeros((k, k * p))
             selector[:, :k] = np.eye(k)
             power = np.eye(k * p)
-            companion = companion_matrix(stack)
+            companion = _companion_matrix(stack)
             for h in range(horizon + 1):
                 psi[h] = selector @ power @ selector.T
                 power = power @ companion
@@ -922,7 +923,7 @@ class TVPSVARResult(_SummaryMixin, _ConvergenceMixin):
             >>> import numpy as np
             >>> y = np.random.default_rng(0).standard_normal((120, 2))
             >>> source = TVPVAR(y, order=1, training=30).fit(n_draws=20, n_burn=8, seed=0)
-            >>> table = TimeVaryingSVAR(source).identify()._summary_table()
+            >>> table = TVPSVAR(source).identify()._summary_table()
             >>> table.title, len(table.rows), len(table.notes)
             ('TVP-SVAR (TVP-VAR) Results', 2, 3)
             >>> table.columns
@@ -1355,7 +1356,7 @@ class TVPSVAR:
         (5, 2, 2)
         >>> TVPSVAR(y)  # doctest: +ELLIPSIS
         Traceback (most recent call last):
-        cultivars.exceptions.SpecificationError: TimeVaryingSVAR constructs with a fitted ...
+        cultivars.exceptions.SpecificationError: TVPSVAR constructs with a fitted ...
         >>> TVPSVAR(res, order=("y2", "y3"))  # doctest: +ELLIPSIS
         Traceback (most recent call last):
         cultivars.exceptions.SpecificationError: order must be a permutation of ('y1', 'y2'); ...
@@ -1397,7 +1398,7 @@ class TVPSVAR:
         """
         if not isinstance(source, TVPVARResult):
             raise SpecificationError(
-                "TimeVaryingSVAR constructs with a fitted TVPVAR or TVPVARSV "
+                "TVPSVAR constructs with a fitted TVPVAR or TVPVARSV "
                 f"result; got {type(source).__name__}."
             )
         if order is not None and isinstance(source, TVPVARSVResult):

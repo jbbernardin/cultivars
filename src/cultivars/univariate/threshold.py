@@ -139,14 +139,14 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
-from .._core import _SIMULATION_BURN, SummaryTable, trailing_lag
-from .._internals import (
-    _ObservedRegimeResult,
-    _ThresholdFit,
-    _ThresholdModel,
-)
+from ..engine._core._defaults import _SIMULATION_BURN
+from ..engine._core._matrices import _trailing_lag
+from ..engine._internals._fits import _ThresholdFit
+from ..engine._internals._models import _ThresholdModel
+from ..engine._internals._results import _ObservedRegimeResult
 from ..exceptions import SpecificationError
 from ..state_space.nonlinear import NonlinearSSM
+from ..summary import SummaryTable
 
 __all__ = ["SETAR", "TAR", "SETARResult"]
 
@@ -286,7 +286,7 @@ class SETARResult(_ObservedRegimeResult):
             order=model.order,
             delay=fit.delay,
             threshold=fit.threshold,
-            threshold_values=trailing_lag(
+            threshold_values=_trailing_lag(
                 model.endog if external is None else external,
                 delay=fit.delay,
                 length=fit.nobs,

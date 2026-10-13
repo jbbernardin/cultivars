@@ -126,22 +126,22 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import (
-    _SET_BOUNDS_NOTE,
-    _UNIT_SHOCK_NOTE,
-    ClosedSystemResult,
-    SummaryTable,
+from ...engine._core._matrices import (
     _face_projectors,
     _lower_cholesky,
     _null_basis,
     _sphere_extrema,
-    _validate_sign_patterns,
 )
-from ..._internals import (
-    _IdentificationModel,
-    _SummaryMixin,
+from ...engine._core._notes import (
+    _SET_BOUNDS_NOTE,
+    _UNIT_SHOCK_NOTE,
 )
+from ...engine._core._protocols import ClosedSystemResult
+from ...engine._core._validators import _validate_sign_patterns
+from ...engine._internals._mixins import _SummaryMixin
+from ...engine._internals._models import _IdentificationModel
 from ...exceptions import SpecificationError
+from ...summary import SummaryTable
 
 __all__ = ["SetIdentifiedSVAR", "SetIdentifiedSVARResult"]
 

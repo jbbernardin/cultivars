@@ -74,13 +74,13 @@ Example:
     validates at runtime through the same object:
 
     >>> from typing import get_args
-    >>> from cultivars._core import validate_choice
+    >>> from cultivars.engine._core._validators import _validate_choice
     >>> trend: Trend = "ct"
     >>> get_args(Trend.__value__)
     ('n', 'c', 'ct')
-    >>> validate_choice(trend, Trend, "trend")
+    >>> _validate_choice(trend, Trend, "trend")
     'ct'
-    >>> validate_choice("quadratic", Trend, "trend")
+    >>> _validate_choice("quadratic", Trend, "trend")
     Traceback (most recent call last):
         ...
     cultivars.exceptions.SpecificationError: trend must be one of ('n', 'c', 'ct'); got 'quadratic'.
@@ -88,10 +88,12 @@ Example:
     ('none', 'restricted_constant', 'constant', 'restricted_trend', 'trend')
 """
 
-from .._core import (
+from ..engine._core._protocols import Identification
+from ..engine._core._types import (
     Activation,
     CointegrationTrend,
     Frequency,
+    FTest,
     FunctionalBasis,
     LongMemoryMethod,
     Mean,
@@ -102,6 +104,7 @@ from .._core import (
     Penalty,
     ProbabilityType,
     Regime,
+    Residuals,
     Transition,
     Trend,
     Vol,
@@ -110,8 +113,10 @@ from .._core import (
 __all__ = [
     "Activation",
     "CointegrationTrend",
+    "FTest",
     "Frequency",
     "FunctionalBasis",
+    "Identification",
     "LongMemoryMethod",
     "Mean",
     "Method",
@@ -121,6 +126,7 @@ __all__ = [
     "Penalty",
     "ProbabilityType",
     "Regime",
+    "Residuals",
     "Transition",
     "Trend",
     "Vol",

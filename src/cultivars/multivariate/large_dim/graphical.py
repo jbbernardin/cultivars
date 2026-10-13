@@ -132,11 +132,9 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import SummaryTable
-from ..._internals import (
-    _SparseVectorAutoRegressionModel,
-    _VectorGraphicalFit,
-)
+from ...engine._internals._fits import _VectorGraphicalFit
+from ...engine._internals._models import _SparseVectorAutoRegressionModel
+from ...summary import SummaryTable
 from .sparse import SparseVARResult
 
 __all__ = ["GraphicalVAR", "GraphicalVARResult"]

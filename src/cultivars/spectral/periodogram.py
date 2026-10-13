@@ -124,19 +124,23 @@ import numpy as np
 import numpy.typing as npt
 from scipy.stats import chi2
 
-from .._core import (
+from ..engine._core._defaults import (
     _MIN_SPECTRUM_OBS,
     _SPECTRAL_METHOD_TITLES,
-    SummaryTable,
+)
+from ..engine._core._spectra import (
     _daniell_density,
     _multitaper_density,
-    _ols_detrend,
-    _validate_spectrum_panel,
     _welch_density,
-    validate_order,
 )
-from .._internals import _SummaryMixin
+from ..engine._core._transforms import _ols_detrend
+from ..engine._core._validators import (
+    _validate_order,
+    _validate_spectrum_panel,
+)
+from ..engine._internals._mixins import _SummaryMixin
 from ..exceptions import SpecificationError
+from ..summary import SummaryTable
 
 __all__ = ["DaniellSpectrum", "MultitaperSpectrum", "SpectrumEstimate", "WelchSpectrum"]
 
@@ -639,7 +643,7 @@ class MultitaperSpectrum:
         if not bandwidth >= 1.0:
             raise SpecificationError(f"bandwidth NW must be at least 1; got {bandwidth}.")
         tapers = int(2 * bandwidth - 1) if n_tapers is None else n_tapers
-        self._tapers = validate_order(tapers, "n_tapers", minimum=1)
+        self._tapers = _validate_order(tapers, "n_tapers", minimum=1)
         if self._tapers > 2 * bandwidth:
             raise SpecificationError(
                 f"n_tapers must not exceed 2 NW = {2 * bandwidth:g} for usable concentration; "
@@ -818,7 +822,7 @@ class DaniellSpectrum:
         self._panel = _ols_detrend(panel, self._detrend)
         n = self._panel.shape[0]
         default = max(1, round(np.sqrt(n) / 2.0))
-        self._span = validate_order(default if span is None else span, "span", minimum=1)
+        self._span = _validate_order(default if span is None else span, "span", minimum=1)
         if 2 * self._span + 1 > n // 2:
             raise SpecificationError(
                 f"a span of {self._span} averages more ordinates than the {n // 2} available."
@@ -994,7 +998,7 @@ class WelchSpectrum:
         self._panel = _ols_detrend(panel, self._detrend)
         n = self._panel.shape[0]
         default = max(32, (n // 8) - (n // 8) % 2)
-        self._segment = validate_order(
+        self._segment = _validate_order(
             default if segment is None else segment, "segment", minimum=8
         )
         if self._segment > n:

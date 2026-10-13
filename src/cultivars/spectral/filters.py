@@ -137,19 +137,23 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from .._core import (
-    _METHOD_TITLES,
-    SummaryTable,
+from ..engine._core._defaults import _METHOD_TITLES
+from ..engine._core._estimators import (
     _beveridge_nelson,
-    _butterworth_penalty,
     _hamilton_regression,
-    _penalized_trend,
-    _penalty_cutoff_period,
-    validate_endog_matrix,
-    validate_order,
 )
-from .._internals import _SummaryMixin
+from ..engine._core._spectra import (
+    _butterworth_penalty,
+    _penalty_cutoff_period,
+)
+from ..engine._core._transforms import _penalized_trend
+from ..engine._core._validators import (
+    _validate_endog_matrix,
+    _validate_order,
+)
+from ..engine._internals._mixins import _SummaryMixin
 from ..exceptions import SpecificationError
+from ..summary import SummaryTable
 from ..univariate.box_jenkins import ARMAResult
 
 __all__ = [
@@ -635,7 +639,7 @@ class HodrickPrescottFilter:
                 ...
             cultivars.exceptions.SpecificationError: ... needs at least 4 observations.
         """
-        panel = validate_endog_matrix(data)
+        panel = _validate_endog_matrix(data)
         if panel.shape[0] < 4:
             raise SpecificationError("the Hodrick-Prescott filter needs at least 4 observations.")
         return DecompositionFilterResult._penalized_result(
@@ -761,7 +765,7 @@ class ButterworthFilter:
         if not period > 2.0:
             raise SpecificationError(f"period must exceed 2 observations per cycle; got {period}.")
         self._period = float(period)
-        self._order = validate_order(order, "order", minimum=1)
+        self._order = _validate_order(order, "order", minimum=1)
 
     def filter(self, data: npt.ArrayLike) -> DecompositionFilterResult:
         """Filter a panel.
@@ -792,7 +796,7 @@ class ButterworthFilter:
                 ...
             cultivars.exceptions.SpecificationError: a Butterworth filter of order 3 needs at ...
         """
-        panel = validate_endog_matrix(data)
+        panel = _validate_endog_matrix(data)
         if panel.shape[0] < 2 * self._order + 2:
             raise SpecificationError(
                 f"a Butterworth filter of order {self._order} needs at least "
@@ -912,8 +916,8 @@ class HamiltonFilter:
                 ...
             cultivars.exceptions.SpecificationError: horizon must be >= 1; got 0.
         """
-        self._horizon = validate_order(horizon, "horizon", minimum=1)
-        self._lags = validate_order(lags, "lags", minimum=1)
+        self._horizon = _validate_order(horizon, "horizon", minimum=1)
+        self._lags = _validate_order(lags, "lags", minimum=1)
 
     def filter(self, data: npt.ArrayLike) -> DecompositionFilterResult:
         """Filter a panel, one regression per column.
@@ -945,7 +949,7 @@ class HamiltonFilter:
                 ...
             cultivars.exceptions.NumericalError: the Hamilton regression needs more than 16 ...
         """
-        panel = validate_endog_matrix(data)
+        panel = _validate_endog_matrix(data)
         offset = self._horizon + self._lags - 1
         rows = panel.shape[0] - offset
         trend = np.empty((max(rows, 0), panel.shape[1]))

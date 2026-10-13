@@ -103,11 +103,11 @@ Example:
     A long-memory series is not a short-memory one with a large root:
 
     >>> import numpy as np
-    >>> from cultivars._core import fractional_difference_weights
+    >>> from cultivars.engine._core._transforms import _fractional_difference_weights
     >>> from cultivars.univariate.box_jenkins import ARMA
     >>> rng = np.random.default_rng(0)
     >>> n = 600
-    >>> w = fractional_difference_weights(-0.4, n)
+    >>> w = _fractional_difference_weights(-0.4, n)
     >>> y = np.convolve(rng.standard_normal(n + 300), w)[300 : 300 + n]
     >>> long = ARFIMA(y, order=(0, 0)).fit()
     >>> short = ARMA(y, order=(2, 0)).fit()
@@ -124,15 +124,19 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
-from .._core import _D_MAX, InformationCriteria, SummaryTable
-from .._internals import (
+from ..engine._core._defaults import _D_MAX
+from ..engine._internals._fits import _FractionalIntegrationFit
+from ..engine._internals._mixins import (
     _ComparisonMixin,
-    _FractionalIntegrationFit,
-    _FractionalIntegrationModel,
     _InvertibilityMixin,
     _SeriesMixin,
     _StationarityMixin,
     _SummaryMixin,
+)
+from ..engine._internals._models import _FractionalIntegrationModel
+from ..summary import (
+    InformationCriteria,
+    SummaryTable,
 )
 
 __all__ = ["ARFIMA", "ARFIMAResult"]
@@ -221,10 +225,10 @@ class ARFIMAResult(
         white noise with the weights of :math:`(1 - L)^{-0.3}`:
 
         >>> import numpy as np
-        >>> from cultivars._core import fractional_difference_weights
+        >>> from cultivars.engine._core._transforms import _fractional_difference_weights
         >>> rng = np.random.default_rng(0)
         >>> n = 600
-        >>> w = fractional_difference_weights(-0.3, n)
+        >>> w = _fractional_difference_weights(-0.3, n)
         >>> y = np.convolve(rng.standard_normal(n + 300), w)[300 : 300 + n]
         >>> res = ARFIMA(y, order=(0, 0)).fit()
         >>> list(res.params), res.nobs, res.n_params
@@ -504,10 +508,10 @@ class ARFIMA(_FractionalIntegrationModel[ARFIMAResult]):
         integrated series:
 
         >>> import numpy as np
-        >>> from cultivars._core import fractional_difference_weights
+        >>> from cultivars.engine._core._transforms import _fractional_difference_weights
         >>> rng = np.random.default_rng(0)
         >>> n = 600
-        >>> w = fractional_difference_weights(-0.3, n)
+        >>> w = _fractional_difference_weights(-0.3, n)
         >>> y = np.convolve(rng.standard_normal(n + 300), w)[300 : 300 + n]
         >>> pure = ARFIMA(y, order=(0, 0)).fit()
         >>> with_ar = ARFIMA(y, order=(1, 0)).fit()

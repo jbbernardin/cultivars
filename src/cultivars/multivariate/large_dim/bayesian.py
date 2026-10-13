@@ -97,18 +97,20 @@ from dataclasses import dataclass, field
 import numpy as np
 import numpy.typing as npt
 
-from ..._core import SummaryTable, Trend, companion_matrix
-from ..._internals import (
-    _BayesianVectorAutoRegressionModel,
+from ...bayes.priors import NormalInverseWishartPrior
+from ...engine._core._matrices import _companion_matrix
+from ...engine._core._types import Trend
+from ...engine._internals._fits import _VectorConjugateFit
+from ...engine._internals._mixins import (
     _ConvergenceMixin,
-    _MarginalLikelihoodSelection,
-    _Prior,
     _ReplicationMixin,
     _SummaryMixin,
-    _VectorConjugateFit,
 )
-from ...bayes.priors import NormalInverseWishartPrior
+from ...engine._internals._models import _BayesianVectorAutoRegressionModel
+from ...engine._internals._priors import _Prior
+from ...engine._internals._selections import _MarginalLikelihoodSelection
 from ...exceptions import SpecificationError
+from ...summary import SummaryTable
 
 __all__ = ["BVAR", "BVARResult"]
 
@@ -273,7 +275,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
         Simulate a stable bivariate system, fit it, and read the posterior:
 
         >>> import numpy as np
-        >>> from cultivars.multivariate import BVAR
+        >>> from cultivars.multivariate.large_dim.bayesian import BVAR
         >>> rng = np.random.default_rng(0)
         >>> y = np.zeros((120, 2))
         >>> for t in range(1, 120):
@@ -302,7 +304,8 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
         Rank priors on the same sample by log marginal likelihood; the
         difference is a log Bayes factor:
 
-        >>> from cultivars.bayes import NormalInverseWishartPrior, compare
+        >>> from cultivars.bayes.evidence import compare
+        >>> from cultivars.bayes.priors import NormalInverseWishartPrior
         >>> tight = NormalInverseWishartPrior(tightness=0.02)
         >>> alt = BVAR(y, order=1, names=("growth", "inflation"), prior=tight)
         >>> alt = alt.fit(n_draws=200, seed=0)
@@ -540,7 +543,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
             Round-tripping a fit through the assembler is a pure field mapping:
 
             >>> import numpy as np
-            >>> from cultivars.multivariate import BVAR
+            >>> from cultivars.multivariate.large_dim.bayesian import BVAR
             >>> from cultivars.multivariate.large_dim.bayesian import BVARResult
             >>> model = BVAR(np.random.default_rng(0).standard_normal((60, 2)), order=1)
             >>> fit = model._fit_conjugate(n_draws=20, seed=0)
@@ -632,7 +635,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars.multivariate import BVAR
+            >>> from cultivars.multivariate.large_dim.bayesian import BVAR
             >>> y = np.random.default_rng(0).standard_normal((60, 2))
             >>> res = BVAR(y, order=2, trend="ct", names=("a", "b")).fit(n_draws=10, seed=0)
             >>> res._regressor_labels()
@@ -679,7 +682,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars.multivariate import BVAR
+            >>> from cultivars.multivariate.large_dim.bayesian import BVAR
             >>> rng = np.random.default_rng(0)
             >>> y = np.zeros((120, 2))
             >>> for t in range(1, 120):
@@ -731,7 +734,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars.multivariate import BVAR
+            >>> from cultivars.multivariate.large_dim.bayesian import BVAR
             >>> y = np.random.default_rng(0).standard_normal((60, 3))
             >>> res = BVAR(y, order=2, trend="ct").fit(n_draws=10, seed=0)
             >>> np.allclose(res._stack_of(res.beta_mean), res.coefficients)
@@ -781,7 +784,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars.multivariate import BVAR
+            >>> from cultivars.multivariate.large_dim.bayesian import BVAR
             >>> y = np.random.default_rng(0).standard_normal((60, 2))
             >>> res = BVAR(y, order=1).fit(n_draws=10, seed=0)
             >>> draws = res._irf_draws(3, orthogonalized=False)
@@ -803,7 +806,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
                 selector = np.zeros((k, k * p))
                 selector[:, :k] = np.eye(k)
                 power = np.eye(k * p)
-                companion = companion_matrix(self._stack_of(self.beta_draws[s]))
+                companion = _companion_matrix(self._stack_of(self.beta_draws[s]))
                 for h in range(horizon + 1):
                     psi[h] = selector @ power @ selector.T
                     power = power @ companion
@@ -888,7 +891,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars.multivariate import BVAR
+            >>> from cultivars.multivariate.large_dim.bayesian import BVAR
             >>> rng = np.random.default_rng(0)
             >>> y = np.zeros((120, 2))
             >>> for t in range(1, 120):
@@ -983,7 +986,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars.multivariate import BVAR
+            >>> from cultivars.multivariate.large_dim.bayesian import BVAR
             >>> rng = np.random.default_rng(0)
             >>> y = np.zeros((120, 2))
             >>> for t in range(1, 120):
@@ -1085,7 +1088,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars.multivariate import BVAR
+            >>> from cultivars.multivariate.large_dim.bayesian import BVAR
             >>> rng = np.random.default_rng(0)
             >>> y = np.zeros((120, 2))
             >>> for t in range(1, 120):
@@ -1180,7 +1183,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars.multivariate import BVAR
+            >>> from cultivars.multivariate.large_dim.bayesian import BVAR
             >>> rng = np.random.default_rng(0)
             >>> y = np.zeros((120, 2))
             >>> for t in range(1, 120):
@@ -1264,7 +1267,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars.multivariate import BVAR
+            >>> from cultivars.multivariate.large_dim.bayesian import BVAR
             >>> rng = np.random.default_rng(0)
             >>> y = np.zeros((120, 2))
             >>> for t in range(1, 120):
@@ -1288,7 +1291,7 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
             return 1.0
         stable = 0
         for s in range(self.n_kept):
-            eigs = np.linalg.eigvals(companion_matrix(self._stack_of(self.beta_draws[s])))
+            eigs = np.linalg.eigvals(_companion_matrix(self._stack_of(self.beta_draws[s])))
             stable += int(float(np.abs(eigs).max(initial=0.0)) < 1.0)
         return stable / self.n_kept
 
@@ -1321,8 +1324,9 @@ class BVARResult(_SummaryMixin, _ConvergenceMixin, _ReplicationMixin):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars.multivariate import BVAR
-            >>> from cultivars.bayes import NormalInverseWishartPrior, compare
+            >>> from cultivars.multivariate.large_dim.bayesian import BVAR
+            >>> from cultivars.bayes.evidence import compare
+            >>> from cultivars.bayes.priors import NormalInverseWishartPrior
             >>> rng = np.random.default_rng(0)
             >>> y = np.zeros((120, 2))
             >>> for t in range(1, 120):
@@ -1576,7 +1580,7 @@ class BVAR(_BayesianVectorAutoRegressionModel[BVARResult]):
         Fit under the default prior and read the posterior:
 
         >>> import numpy as np
-        >>> from cultivars.multivariate import BVAR
+        >>> from cultivars.multivariate.large_dim.bayesian import BVAR
         >>> rng = np.random.default_rng(0)
         >>> y = np.zeros((120, 2))
         >>> for t in range(1, 120):
@@ -1589,7 +1593,7 @@ class BVAR(_BayesianVectorAutoRegressionModel[BVARResult]):
         twenty variables at two lags is 41 regressors per equation on 30
         observations:
 
-        >>> from cultivars.multivariate import VAR
+        >>> from cultivars.multivariate.reduced_form.vector_autoregression import VAR
         >>> wide = rng.standard_normal((30, 20)).cumsum(axis=0)
         >>> VAR(wide, order=2)  # doctest: +ELLIPSIS
         Traceback (most recent call last):
@@ -1601,7 +1605,7 @@ class BVAR(_BayesianVectorAutoRegressionModel[BVARResult]):
         Compose dummy observations onto the base prior and compare on the
         marginal likelihood of the same sample:
 
-        >>> from cultivars.bayes import (
+        >>> from cultivars.bayes.priors import (
         ...     DummyInitialObservationPrior,
         ...     NormalInverseWishartPrior,
         ...     SumOfCoefficientsPrior,
@@ -1621,7 +1625,7 @@ class BVAR(_BayesianVectorAutoRegressionModel[BVARResult]):
         A prior with Litterman's cross-equation shrinkage is not conjugate
         and is refused when the fit runs:
 
-        >>> from cultivars.bayes import MinnesotaPrior
+        >>> from cultivars.bayes.priors import MinnesotaPrior
         >>> model = BVAR(y, order=1, prior=MinnesotaPrior(cross_equation=0.5))
         >>> model.fit(n_draws=10, seed=0)  # doctest: +ELLIPSIS
         Traceback (most recent call last):
@@ -1801,7 +1805,7 @@ class BVAR(_BayesianVectorAutoRegressionModel[BVARResult]):
 
         Example:
             >>> import numpy as np
-            >>> from cultivars.multivariate import BVAR
+            >>> from cultivars.multivariate.large_dim.bayesian import BVAR
             >>> rng = np.random.default_rng(0)
             >>> y = np.zeros((120, 2))
             >>> for t in range(1, 120):
