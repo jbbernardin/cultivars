@@ -14,6 +14,9 @@ listed under Changed.
 - `VECMResult.normalized_alpha` raises `SpecificationError` for an
   out-of-range or zero-loading `on`, matching `normalized_beta`; both
   methods validate through one shared helper (#286).
+- The "declare at least one narrative event" error from
+  `NarrativeSignRestrictedSVAR` names `SignRestrictedSVAR` instead of the
+  pre-a2 `SignSVAR` (#497).
 
 ## [1.0.0a4] - 2026-10-13
 
