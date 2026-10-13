@@ -452,17 +452,9 @@ class VECMResult(
             Traceback (most recent call last):
             cultivars.exceptions.SpecificationError: on must index a variable, 0..1; got 2.
         """
-        if not 0 <= on < self.k_endog:
-            raise SpecificationError(f"on must index a variable, 0..{self.k_endog - 1}; got {on}.")
+        pivots = self._pivot(on)
         if not self.rank:
             return np.zeros((self.beta.shape[0], 0), dtype=np.float64)
-        pivots: npt.NDArray[np.float64] = self.beta[on]
-        if np.any(np.abs(pivots) < 1e-10):
-            raise SpecificationError(
-                f"variable {self.names[on]!r} has a numerically zero loading in at least "
-                "one cointegrating vector, so it cannot carry the normalization; choose a "
-                "variable that enters every relation."
-            )
         return np.asarray(self.beta / pivots, dtype=np.float64)
 
     def normalized_alpha(self, *, on: int = 0) -> npt.NDArray[np.float64]:
@@ -494,10 +486,43 @@ class VECMResult(
             True
             >>> res.normalized_alpha().ravel().round(2)
             array([0.15, 2.63])
+            >>> res.normalized_alpha(on=2)
+            Traceback (most recent call last):
+            cultivars.exceptions.SpecificationError: on must index a variable, 0..1; got 2.
         """
+        pivots = self._pivot(on)
         if not self.rank:
             return np.zeros((self.k_endog, 0), dtype=np.float64)
-        return np.asarray(self.alpha * self.beta[on], dtype=np.float64)
+        return np.asarray(self.alpha * pivots, dtype=np.float64)
+
+    def _pivot(self, on: int) -> npt.NDArray[np.float64]:
+        """The loadings of variable ``on`` across the cointegrating vectors, validated.
+
+        The row of ``beta`` that :meth:`normalized_beta` divides by and
+        :meth:`normalized_alpha` multiplies by, checked once here so the two
+        normalizations accept and refuse exactly the same ``on``.
+
+        Args:
+            on: Index of the variable that carries the normalization.
+
+        Returns:
+            The ``(r,)`` row ``beta[on]``, empty when the rank is zero.
+
+        Raises:
+            SpecificationError: If the index is out of range, or the loading is
+                numerically zero in some vector, which means the normalization
+                would divide by nothing and another variable should carry it.
+        """
+        if not 0 <= on < self.k_endog:
+            raise SpecificationError(f"on must index a variable, 0..{self.k_endog - 1}; got {on}.")
+        pivots: npt.NDArray[np.float64] = self.beta[on]
+        if np.any(np.abs(pivots) < 1e-10):
+            raise SpecificationError(
+                f"variable {self.names[on]!r} has a numerically zero loading in at least "
+                "one cointegrating vector, so it cannot carry the normalization; choose a "
+                "variable that enters every relation."
+            )
+        return pivots
 
     def error_correction_terms(self) -> npt.NDArray[np.float64]:
         r"""The fitted disequilibria, one column per cointegrating relation.

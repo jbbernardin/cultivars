@@ -9,6 +9,12 @@ listed under Changed.
 
 ## [Unreleased]
 
+### Fixed
+
+- `VECMResult.normalized_alpha` raises `SpecificationError` for an
+  out-of-range or zero-loading `on`, matching `normalized_beta`; both
+  methods validate through one shared helper (#286).
+
 ## [1.0.0a4] - 2026-10-13
 
 Documentation and integration release. No public model, result or test
